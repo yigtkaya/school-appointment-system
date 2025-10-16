@@ -131,3 +131,85 @@ class WeeklyScheduleResponse(BaseModel):
     total_slots: int
     available_slots: int
     booked_slots: int
+
+
+class DailyScheduleResponse(BaseModel):
+    """Schema for daily schedule response."""
+    
+    date: date
+    day_name: str
+    day_of_week: int
+    slots: list[SlotWithTeacher]
+    appointments: list[dict] = Field(description="Appointments for this day")
+    total_slots: int
+    available_slots: int
+    booked_slots: int
+    suggested_times: list[dict] = Field(description="Suggested available time slots")
+
+
+class MonthlyCalendarResponse(BaseModel):
+    """Schema for monthly calendar response."""
+    
+    year: int
+    month: int
+    month_name: str
+    weeks: list[dict] = Field(description="Calendar weeks with days")
+    total_slots: int
+    total_appointments: int
+    teacher_id: Optional[str] = None
+
+
+class CalendarExportResponse(BaseModel):
+    """Schema for calendar export response."""
+    
+    filename: str
+    content_type: str
+    content: str
+
+
+class TimeSlotSuggestion(BaseModel):
+    """Schema for time slot suggestions."""
+    
+    date: date
+    suggestions: list[dict] = Field(description="Available time slot suggestions")
+    existing_slots_count: int
+    conflicts_checked: int
+
+
+class EnhancedWeeklyScheduleResponse(BaseModel):
+    """Enhanced weekly schedule with more details."""
+    
+    teacher_id: str
+    teacher_name: str
+    week_start_date: date
+    week_end_date: date
+    days: list[dict] = Field(description="Daily schedules for the week")
+    summary: dict = Field(description="Week summary statistics")
+    time_range: dict = Field(description="Earliest and latest times")
+
+
+class AdvancedBulkSlotCreate(BaseModel):
+    """Advanced schema for creating multiple slots with patterns."""
+    
+    teacher_id: str = Field(..., description="Teacher ID")
+    week_start_date: date = Field(..., description="Start date of the week (Monday)")
+    slot_pattern: dict = Field(
+        ...,
+        description="Pattern for creating slots",
+        example={
+            "days": [0, 1, 2, 3, 4],  # Monday to Friday
+            "start_time": "09:00",
+            "end_time": "17:00", 
+            "slot_duration_minutes": 30,
+            "break_duration_minutes": 15,
+            "lunch_break": {"start": "12:00", "end": "13:00"},
+            "exclude_times": [{"start": "10:30", "end": "10:45"}]
+        }
+    )
+    
+    @validator('week_start_date')
+    def week_start_is_monday(cls, v):
+        """Validate that week_start_date is a Monday."""
+        if v.weekday() != 0:  # Monday is 0
+            raise ValueError('Week start date must be a Monday')
+        return v

@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 
 from app.core.config import get_settings
-from app.api.routes import auth, teachers, parents, slots, appointments, notifications
+from app.api.routes import auth, teachers, parents, slots, appointments, notifications, calendar
 from app.db.base import Base
 from app.db.session import engine
 from app.middleware.cors import setup_cors
@@ -48,6 +48,7 @@ app.include_router(parents.router, prefix="/api/v1/parents", tags=["parents"])
 app.include_router(slots.router, prefix="/api/v1/slots", tags=["slots"])
 app.include_router(appointments.router, prefix="/api/v1/appointments", tags=["appointments"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["calendar"])
 
 
 @app.get("/")
