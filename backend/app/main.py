@@ -1,14 +1,25 @@
 """FastAPI application entry point."""
 
+import logging
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.api.routes import auth
+from app.api.routes import auth, teachers, parents
 from app.db.base import Base
 from app.db.session import engine
+from app.middleware.cors import setup_cors
+from app.middleware.request_logging import RequestLoggingMiddleware
+from app.exceptions.handlers import setup_exception_handlers
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create tables
+logger.info("Creating database tables...")
 Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI app
@@ -21,17 +32,19 @@ app = FastAPI(
     debug=settings.DEBUG
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Change this in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Setup CORS
+setup_cors(app)
+
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
+
+# Setup exception handlers
+setup_exception_handlers(app)
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(teachers.router, prefix="/api/v1/teachers", tags=["teachers"])
+app.include_router(parents.router, prefix="/api/v1/parents", tags=["parents"])
 
 
 @app.get("/")
@@ -39,14 +52,16 @@ async def root():
     """Root endpoint."""
     return {
         "message": "School Appointment Management System API",
-        "version": "0.1.0"
+        "version": "0.1.0",
+        "docs": "/docs",
+        "openapi": "/openapi.json"
     }
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok"}
+    return {"status": "ok", "version": "0.1.0"}
 
 
 if __name__ == "__main__":

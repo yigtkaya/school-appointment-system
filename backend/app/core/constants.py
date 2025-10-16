@@ -1,31 +1,25 @@
 """Application constants."""
 
-# User roles
-class UserRole:
-    """User role constants."""
+from enum import Enum
+
+
+class UserRole(str, Enum):
+    """User role enum."""
     ADMIN = "admin"
     TEACHER = "teacher"
     PARENT = "parent"
-    
-    ALL = [ADMIN, TEACHER, PARENT]
 
 
-# Meeting modes
-class MeetingMode:
-    """Meeting mode constants."""
+class MeetingMode(str, Enum):
+    """Meeting mode enum."""
     ONLINE = "online"
     FACE_TO_FACE = "face_to_face"
-    
-    ALL = [ONLINE, FACE_TO_FACE]
 
 
-# Appointment status
-class AppointmentStatus:
-    """Appointment status constants."""
+class AppointmentStatus(str, Enum):
+    """Appointment status enum."""
     PENDING = "pending"
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
     NO_SHOW = "no_show"
-    
-    ALL = [PENDING, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW]

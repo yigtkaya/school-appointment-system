@@ -1,5 +1,6 @@
 """User CRUD operations."""
 
+import uuid
 from typing import Optional
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def create_with_hashed_password(self, db: Session, user_in: UserCreate) -> User:
         """Create user with hashed password."""
         db_user = User(
+            id=str(uuid.uuid4()),
             email=user_in.email,
             full_name=user_in.full_name,
             password_hash=get_password_hash(user_in.password),

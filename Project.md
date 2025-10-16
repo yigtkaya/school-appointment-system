@@ -38,8 +38,8 @@ This system enables **parents** to easily schedule meetings with **teachers** ba
 - **TanStack Router & TanStack Query**
 - **Tailwind CSS + shadcn/ui**
 - **React Hook Form + Zod**
-- **BetterAuth (Client SDK)**
 - **Zustand** for lightweight state management
+- **JWT Authentication** (localStorage/sessionStorage)
 
 ### Backend
 - **FastAPI (Python)**
@@ -88,6 +88,17 @@ Triggered automatically on:
 - Appointment confirmation
 - Appointment cancellation
 - Optional reminders (24h before)
+
+---
+
+## 🔐 Authentication Strategy
+
+The system uses **JWT-based authentication**:
+- **Token Generation**: JWT tokens issued on login (access + optional refresh tokens)
+- **Token Validation**: All protected endpoints validate tokens via middleware
+- **Role-Based Access Control (RBAC)**: Dependency injection with role verification
+- **Token Storage (Frontend)**: localStorage for web, secure storage for mobile
+- **Token Refresh**: Optional refresh token rotation for enhanced security
 
 ---
 
@@ -176,7 +187,7 @@ src/
 
 | Week | Tasks |
 |------|--------|
-| **1** | Initialize FastAPI + SQLAlchemy + PostgreSQL + BetterAuth |
+| **1** | Initialize FastAPI + SQLAlchemy + PostgreSQL + JWT Auth |
 | **2** | Implement teachers, parents, slots modules |
 | **3** | Appointment flow & slot locking logic |
 | **4** | Notifications (email + WhatsApp) |
