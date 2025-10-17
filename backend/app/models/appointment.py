@@ -1,7 +1,7 @@
 """Appointment model."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Enum as SQLEnum, Text
+from sqlalchemy import Column, String, DateTime, ForeignKey, Enum as SQLEnum, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -20,6 +20,7 @@ class Appointment(Base):
     meeting_mode = Column(SQLEnum(MeetingMode), nullable=False)
     status = Column(SQLEnum(AppointmentStatus), default=AppointmentStatus.PENDING, nullable=False, index=True)
     notes = Column(Text, nullable=True)
+    reminder_sent = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

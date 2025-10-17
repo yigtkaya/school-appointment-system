@@ -64,8 +64,52 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "ok", "version": "0.1.0"}
+    """Basic health check endpoint for Docker and load balancers."""
+    return {
+        "status": "healthy",
+        "service": "school-appointment-api",
+        "version": "0.1.0"
+    }
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    """Readiness check - verifies database and redis connections."""
+    from app.db.session import SessionLocal
+
+    checks = {
+        "status": "ready",
+        "database": "unknown",
+        "redis": "unknown"
+    }
+
+    # Check database connection
+    try:
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+        checks["database"] = "connected"
+    except Exception as e:
+        checks["database"] = f"error: {str(e)}"
+        checks["status"] = "not_ready"
+
+    # Check Redis connection (for Celery)
+    try:
+        from redis import Redis
+        redis_client = Redis.from_url(settings.REDIS_URL)
+        redis_client.ping()
+        checks["redis"] = "connected"
+    except Exception as e:
+        checks["redis"] = f"error: {str(e)}"
+        checks["status"] = "not_ready"
+
+    return checks
+
+
+@app.get("/health/live")
+async def liveness_check():
+    """Liveness check - simple check if service is running."""
+    return {"status": "alive"}
 
 
 if __name__ == "__main__":

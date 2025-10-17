@@ -10,7 +10,7 @@ from app.crud.appointment import appointment
 from app.crud.slot import slot
 from app.crud.parent import parent
 from app.crud.teacher import teacher
-from app.services.notification_integration import notification_integration
+from app.tasks.notifications import send_appointment_confirmation, send_appointment_cancellation
 from app.middleware.dependencies import get_current_user, get_admin_user, get_parent_user, get_teacher_or_admin
 from app.models.user import User
 from app.core.constants import AppointmentStatus
@@ -126,16 +126,16 @@ async def book_appointment(
     # Mark slot as booked
     slot.mark_as_booked(db, slot_id=booking_request.slot_id)
     
-    # Get appointment with relations for notifications
+    # Get appointment with relations
     db_appointment_with_relations = appointment.get_with_relations(db, appointment_id=db_appointment.id)
-    
-    # Send notifications asynchronously
+
+    # Send notifications asynchronously via Celery
     try:
-        await notification_integration.send_appointment_confirmation(db, db_appointment_with_relations)
+        send_appointment_confirmation.delay(str(db_appointment.id))
     except Exception as e:
         # Log error but don't fail the booking
-        print(f"Failed to send confirmation notifications: {str(e)}")
-    
+        print(f"Failed to queue confirmation notifications: {str(e)}")
+
     # Return appointment with all relations
     return db_appointment_with_relations
 
@@ -271,21 +271,18 @@ async def cancel_appointment(
     if db_appointment.status in [AppointmentStatus.CANCELLED, AppointmentStatus.COMPLETED]:
         raise BadRequestException("Appointment is already cancelled or completed")
     
-    # Get appointment with relations before cancelling for notifications
-    appointment_with_relations = appointment.get_with_relations(db, appointment_id)
-    
     # Cancel the appointment
     cancelled_appointment = appointment.cancel_appointment(db, appointment_id)
     if not cancelled_appointment:
         raise HTTPException(status_code=500, detail="Failed to cancel appointment")
-    
-    # Send cancellation notifications
+
+    # Send cancellation notifications asynchronously via Celery
     try:
-        await notification_integration.send_appointment_cancellation(db, appointment_with_relations)
+        send_appointment_cancellation.delay(str(appointment_id), current_user.role)
     except Exception as e:
         # Log error but don't fail the cancellation
-        print(f"Failed to send cancellation notifications: {str(e)}")
-    
+        print(f"Failed to queue cancellation notifications: {str(e)}")
+
     return {"message": "Appointment cancelled successfully"}
 
 
