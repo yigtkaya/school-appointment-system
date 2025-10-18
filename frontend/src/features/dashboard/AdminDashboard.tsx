@@ -1,16 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { teachersAPI, parentsAPI, appointmentsAPI, notificationsAPI } from '@/api'
-import { type Appointment, type Teacher, type Parent, type Notification } from '@/types/api'
+import { type Appointment, type Parent, type Notification } from '@/types/api'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatTime } from '@/lib/utils'
+import { TeacherManagement } from '@/features/admin/TeacherManagement'
+import { SlotManagement } from '@/features/admin/SlotManagement'
 
 enum TabOption {
   OVERVIEW = 'overview',
   TEACHERS = 'teachers',
+  SLOTS = 'slots',
   PARENTS = 'parents',
   APPOINTMENTS = 'appointments',
   NOTIFICATIONS = 'notifications',
@@ -118,31 +121,6 @@ export function AdminDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
-
-  const renderTeachers = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Teachers Management</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {teachers?.map((teacher: Teacher) => (
-            <div key={teacher.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <div className="font-medium">{teacher.user?.full_name}</div>
-                <div className="text-sm text-gray-600">{teacher.user?.email}</div>
-                <div className="text-sm text-gray-500">{teacher.subject} - {teacher.branch}</div>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">Edit</Button>
-                <Button variant="destructive" size="sm">Delete</Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 
   const renderParents = () => (
@@ -260,10 +238,11 @@ export function AdminDashboard() {
 
         <div>
           {selectedTab === 'overview' && renderOverview()}
-          {selectedTab === 'teachers' && renderTeachers()}
+          {selectedTab === 'teachers' && <TeacherManagement />}
           {selectedTab === 'parents' && renderParents()}
           {selectedTab === 'appointments' && renderAppointments()}
           {selectedTab === 'notifications' && renderNotifications()}
+          {selectedTab === 'slots' && <SlotManagement />}
         </div>
       </div>
     </DashboardLayout>

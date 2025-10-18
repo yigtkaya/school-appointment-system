@@ -135,6 +135,13 @@ export interface SlotBulkCreate {
 
 export type Slot = AvailableSlot;
 
+export interface SlotListResponse {
+  slots: AvailableSlot[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
 // Appointment Types
 export interface Appointment {
   id: string;

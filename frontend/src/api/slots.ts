@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate } from '@/types/api'
+import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse } from '@/types/api'
 
 export const slotsAPI = {
   // Get all available slots with filters
@@ -10,7 +10,7 @@ export const slotsAPI = {
     available?: boolean
     skip?: number
     limit?: number
-  }): Promise<Slot[]> => {
+  }): Promise<SlotListResponse> => {
     return apiClient.get('/slots', params)
   },
 
