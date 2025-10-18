@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { teachersAPI, parentsAPI, appointmentsAPI, notificationsAPI } from '@/api'
 import { type Appointment, type Parent, type Notification } from '@/types/api'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime } from '@/lib/day-time-utils'
 import { TeacherManagement } from '@/features/admin/TeacherManagement'
 import { SlotManagement } from '@/features/admin/SlotManagement'
+import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 
 enum TabOption {
   OVERVIEW = 'overview',

@@ -1,14 +1,21 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { slotsAPI, teachersAPI } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronLeft, ChevronRight, Calendar, Clock, User } from 'lucide-react'
-import { formatTime } from '@/lib/utils'
+import { formatTime } from '@/lib/day-time-utils'
 import type { AvailableSlot } from '@/types/api'
+import { useTeachers, useSlots } from '@/hooks'
+import { useScheduleFilterStore } from '@/stores/admin'
 
-const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+enum WeekDay {
+  MONDAY = 0,
+  TUESDAY = 1,
+  WEDNESDAY = 2,
+  THURSDAY = 3,
+  FRIDAY = 4,
+  SATURDAY = 5,
+  SUNDAY = 6,
+}
 
 // Get the start of the current week (Monday)
 const getWeekStart = (date: Date): Date => {
@@ -31,9 +38,6 @@ const addDays = (date: Date, days: number): Date => {
 }
 
 // Add weeks to a date
-const addWeeks = (date: Date, weeks: number): Date => {
-  return addDays(date, weeks * 7)
-}
 
 interface WeeklyScheduleViewProps {
   selectedTeacher?: string
@@ -41,26 +45,20 @@ interface WeeklyScheduleViewProps {
 }
 
 export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyScheduleViewProps) {
-  const [currentWeek, setCurrentWeek] = useState(getWeekStart(new Date()))
+  const { currentWeek, setCurrentWeek, navigateWeek, goToToday } = useScheduleFilterStore()
 
-  const { data: teachers } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersAPI.getAll(),
-  })
+  const { data: teachers } = useTeachers()
 
-  const { data: slotsResponse, isLoading } = useQuery({
-    queryKey: ['slots', 'weekly', selectedTeacher, formatDate(currentWeek)],
-    queryFn: () => slotsAPI.getAll({
-      teacher_id: selectedTeacher || undefined,
-      limit: 200
-      // Remove week_start filter to show all slots, we'll filter client-side
-    }),
+  const { data: slotsResponse, isLoading } = useSlots({
+    teacher_id: selectedTeacher || undefined,
+    limit: 200
+    // Remove week_start filter to show all slots, we'll filter client-side
   })
 
   const allSlots = slotsResponse?.slots || []
 
   // Filter slots to show only those that belong to the current week being viewed
-  const slots = allSlots.filter(slot => {
+  const slots = allSlots.filter((slot: AvailableSlot) => {
     // Parse the slot's week_start_date and check if it matches current week
     const slotWeekStart = new Date(slot.week_start_date)
     const currentWeekStart = formatDate(currentWeek)
@@ -72,7 +70,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
   // Group slots by day and time range for better visualization
   const slotsByDay: Record<number, AvailableSlot[]> = {}
   
-  slots.forEach(slot => {
+  slots.forEach((slot: AvailableSlot) => {
     const day = slot.day_of_week
     if (!slotsByDay[day]) {
       slotsByDay[day] = []
@@ -84,14 +82,6 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
   Object.keys(slotsByDay).forEach(day => {
     slotsByDay[parseInt(day)].sort((a, b) => a.start_time.localeCompare(b.start_time))
   })
-
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    setCurrentWeek(addWeeks(currentWeek, direction === 'next' ? 1 : -1))
-  }
-
-  const goToToday = () => {
-    setCurrentWeek(getWeekStart(new Date()))
-  }
 
   const weekEnd = addDays(currentWeek, 6)
   const isCurrentWeek = formatDate(getWeekStart(new Date())) === formatDate(currentWeek)
@@ -225,7 +215,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                     <th className="w-20 p-3 text-left border-b border-gray-200 bg-gray-50">
                       <Clock className="w-4 h-4 text-gray-500" />
                     </th>
-                    {dayNames.map((day, index) => {
+                    {Object.values(WeekDay).map((day, index) => {
                       const dayDate = addDays(currentWeek, index)
                       const isToday = dayDate.toDateString() === new Date().toDateString()
                       
@@ -247,7 +237,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                     <td className="p-3 text-sm text-gray-600 border-r border-gray-200 bg-gray-50">
                       All Times
                     </td>
-                    {dayNames.map((_, dayIndex) => {
+                    {Object.values(WeekDay).map((_, dayIndex) => {
                       const daySlots = slotsByDay[dayIndex] || []
                       const isToday = addDays(currentWeek, dayIndex).toDateString() === new Date().toDateString()
                       

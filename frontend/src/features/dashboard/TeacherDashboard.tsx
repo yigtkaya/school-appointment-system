@@ -2,15 +2,18 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { appointmentsAPI, slotsAPI, calendarAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime } from '@/lib/day-time-utils'
+import type { AvailableSlot } from '@/types/api'
+
+type TabOption = 'overview' | 'schedule' | 'appointments' | 'slots'
 
 export function TeacherDashboard() {
   const { user } = useAuthStore()
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'schedule' | 'appointments' | 'slots'>('overview')
+  const [selectedTab, setSelectedTab] = useState<TabOption>('overview')
   
   const { data: teacherAppointments } = useQuery({
     queryKey: ['teacher-appointments', user?.id],
@@ -67,7 +70,7 @@ export function TeacherDashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {teacherSlots?.filter(slot => !slot.is_booked).length || 0}
+            {teacherSlots?.slots?.filter((slot: AvailableSlot) => !slot.is_booked).length || 0}
           </div>
         </CardContent>
       </Card>
@@ -208,7 +211,7 @@ export function TeacherDashboard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {teacherSlots?.map((slot) => (
+          {teacherSlots?.slots?.map((slot: AvailableSlot) => (
             <div key={slot.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <div className="font-medium">
@@ -249,7 +252,7 @@ export function TeacherDashboard() {
           {['overview', 'schedule', 'appointments', 'slots'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setSelectedTab(tab as any)}
+              onClick={() => setSelectedTab(tab as TabOption)}
               className={`px-4 py-2 font-medium capitalize ${
                 selectedTab === tab
                   ? 'border-b-2 border-blue-500 text-blue-600'

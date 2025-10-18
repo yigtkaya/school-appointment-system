@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse, SmartSlotCreate, SmartSlotPreview } from '@/types/api'
+import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse, SmartSlotCreate, SmartSlotPreview, Teacher } from '@/types/api'
 
 export const slotsAPI = {
   // Get all available slots with filters
@@ -35,7 +35,7 @@ export const slotsAPI = {
   },
 
   // Delete slot (if not booked)
-  delete: async (slotId: string): Promise<void> => {
+  delete: async (slotId: number): Promise<void> => {
     return apiClient.delete(`/slots/${slotId}`)
   },
 
@@ -43,7 +43,7 @@ export const slotsAPI = {
   getTeacherSchedule: async (teacherId: string, params?: {
     week_start?: string
   }): Promise<{
-    teacher: any
+    teacher: Teacher
     schedule: Record<string, Slot[]>
     week_start: string
     week_end: string

@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { slotsAPI, teachersAPI, type SmartSlotCreate, type SmartSlotPreview } from '@/api'
+import { type SmartSlotPreview } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { X, Calendar, Clock, Users, Sparkles } from 'lucide-react'
+import { useTeachers, usePreviewSmartSlots, useCreateSmartSlots } from '@/hooks'
 
 const smartSlotSchema = z.object({
   teacher_id: z.string().min(1, 'Please select a teacher'),
@@ -45,7 +45,6 @@ const getNextMonday = (): string => {
 }
 
 export function SmartSlotCreateForm({ onClose, onSuccess }: SmartSlotCreateFormProps) {
-  const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<SmartSlotPreview | null>(null)
   const [showPreview, setShowPreview] = useState(false)
 
@@ -67,33 +66,19 @@ export function SmartSlotCreateForm({ onClose, onSuccess }: SmartSlotCreateFormP
   const watchedValues = watch()
 
   // Get all teachers
-  const { data: teachers } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersAPI.getAll(),
-  })
+  const { data: teachers } = useTeachers()
 
-  // Preview mutation
-  const previewMutation = useMutation({
-    mutationFn: (data: SmartSlotCreate) => slotsAPI.previewSmartSlots(data),
+  // Preview mutation with callback to update local preview state
+  const previewMutation = usePreviewSmartSlots({
     onSuccess: (data) => {
       setPreview(data)
       setShowPreview(true)
-      setError(null)
-    },
-    onError: (error) => {
-      setError(error instanceof Error ? error.message : 'Failed to preview slots')
     },
   })
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: (data: SmartSlotCreate) => slotsAPI.createSmartSlots(data),
-    onSuccess: () => {
-      onSuccess()
-    },
-    onError: (error) => {
-      setError(error instanceof Error ? error.message : 'Failed to create slots')
-    },
+  // Create mutation with callback
+  const createMutation = useCreateSmartSlots({
+    onSuccess: onSuccess,
   })
 
   const handleDayToggle = (dayIndex: number) => {
@@ -105,7 +90,6 @@ export function SmartSlotCreateForm({ onClose, onSuccess }: SmartSlotCreateFormP
   }
 
   const handlePreview = (data: SmartSlotFormData) => {
-    setError(null)
     previewMutation.mutate(data)
   }
 
@@ -145,12 +129,6 @@ export function SmartSlotCreateForm({ onClose, onSuccess }: SmartSlotCreateFormP
           {/* Form Section */}
           <div className="space-y-6">
             <form onSubmit={handleSubmit(handlePreview)} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
               {/* Teacher Selection */}
               <div>
                 <label htmlFor="teacher_id" className="block text-sm font-medium text-gray-700 mb-1">

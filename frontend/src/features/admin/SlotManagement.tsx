@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { slotsAPI, teachersAPI } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,37 +5,30 @@ import { Edit, Trash2, Sparkles, List, Calendar } from 'lucide-react'
 import { SlotEditForm } from './SlotEditForm'
 import { SmartSlotCreateForm } from './SmartSlotCreateForm'
 import { WeeklyScheduleView } from './WeeklyScheduleView'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime } from '@/lib/day-time-utils'
 import type { AvailableSlot } from '@/types/api'
+import { useSlots, useTeachers, useDeleteSlot } from '@/hooks'
+import { useAdminUIStore, useScheduleFilterStore } from '@/stores/admin'
 
 export function SlotManagement() {
-  const [showSmartCreateForm, setShowSmartCreateForm] = useState(false)
-  const [editingSlot, setEditingSlot] = useState<AvailableSlot | null>(null)
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('')
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar')
-  const queryClient = useQueryClient()
+  const {
+    showSmartSlotCreateForm,
+    setShowSmartSlotCreateForm,
+    editingSlot,
+    setEditingSlot,
+  } = useAdminUIStore()
 
-  const { data: slotsResponse, isLoading: slotsLoading, error: slotsError } = useQuery({
-    queryKey: ['slots', selectedTeacher],
-    queryFn: () => slotsAPI.getAll({ 
-      teacher_id: selectedTeacher || undefined,
-      limit: 100 
-    }),
+  const { selectedTeacher, setSelectedTeacher, viewMode, setViewMode } =
+    useScheduleFilterStore()
+
+  const { data: slotsResponse, isLoading: slotsLoading, error: slotsError } = useSlots({
+    teacher_id: selectedTeacher || undefined,
+    limit: 100
   })
 
   const slots = slotsResponse?.slots || []
-
-  const { data: teachers } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersAPI.getAll(),
-  })
-
-  const deleteSlotMutation = useMutation({
-    mutationFn: (slotId: string) => slotsAPI.delete(slotId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['slots'] })
-    },
-  })
+  const { data: teachers } = useTeachers()
+  const deleteSlotMutation = useDeleteSlot()
 
   const handleDeleteSlot = async (slot: AvailableSlot) => {
     if (slot.is_booked) {
@@ -48,7 +38,7 @@ export function SlotManagement() {
 
     if (window.confirm(`Are you sure you want to delete this slot? This action cannot be undone.`)) {
       try {
-        await deleteSlotMutation.mutateAsync(slot.id)
+        await deleteSlotMutation.mutateAsync(parseInt(slot.id))
       } catch (error) {
         console.error('Failed to delete slot:', error)
       }
@@ -113,7 +103,7 @@ export function SlotManagement() {
                 </Button>
               </div>
               
-              <Button onClick={() => setShowSmartCreateForm(true)}>
+              <Button onClick={() => setShowSmartSlotCreateForm(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
                 Create Slots
               </Button>
@@ -232,12 +222,11 @@ export function SlotManagement() {
       )}
 
       {/* Smart Create Slots Form */}
-      {showSmartCreateForm && (
+      {showSmartSlotCreateForm && (
         <SmartSlotCreateForm
-          onClose={() => setShowSmartCreateForm(false)}
+          onClose={() => setShowSmartSlotCreateForm(false)}
           onSuccess={() => {
-            setShowSmartCreateForm(false)
-            queryClient.invalidateQueries({ queryKey: ['slots'] })
+            setShowSmartSlotCreateForm(false)
           }}
         />
       )}
@@ -250,7 +239,6 @@ export function SlotManagement() {
           onClose={() => setEditingSlot(null)}
           onSuccess={() => {
             setEditingSlot(null)
-            queryClient.invalidateQueries({ queryKey: ['slots'] })
           }}
         />
       )}

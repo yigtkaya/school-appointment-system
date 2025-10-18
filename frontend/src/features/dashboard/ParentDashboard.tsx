@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { appointmentsAPI, teachersAPI, slotsAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime } from '@/lib/day-time-utils'
 
 enum TabOption {
   OVERVIEW = 'overview',
@@ -89,7 +89,7 @@ export function ParentDashboard() {
           <CardTitle className="text-sm font-medium">Available Slots</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{availableSlots?.length || 0}</div>
+          <div className="text-2xl font-bold">{availableSlots?.slots?.length || 0}</div>
         </CardContent>
       </Card>
 
@@ -210,7 +210,7 @@ export function ParentDashboard() {
           <div>
             <h3 className="font-medium mb-4">Available Time Slots</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableSlots?.slice(0, 9).map((slot) => (
+              {availableSlots?.slots?.slice(0, 9).map((slot) => (
                 <div key={slot.id} className="border rounded-lg p-4">
                   <div className="font-medium">{slot.teacher?.user?.full_name}</div>
                   <div className="text-sm text-gray-600">{slot.teacher?.subject}</div>

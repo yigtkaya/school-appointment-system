@@ -1,29 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useAuthStore, useUser, useIsAuthenticated } from '@/stores/auth'
-import { useEffect } from 'react'
+import { redirectIfAuthenticated } from '@/lib/auth-utils'
 
 export const Route = createFileRoute('/')({
-  component: HomeComponent,
+  beforeLoad: ({ context }) => {
+    redirectIfAuthenticated(context.auth)
+  },
+  component: LandingPage,
 })
-
-function HomeComponent() {
-  const { checkAuth } = useAuthStore()
-  const user = useUser()
-  const isAuthenticated = useIsAuthenticated()
-
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Redirect to dashboard if authenticated
-      window.location.href = '/dashboard'
-    }
-  }, [isAuthenticated, user])
-
-  return <LandingPage />
-}
 
 function LandingPage() {
   return (

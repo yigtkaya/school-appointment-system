@@ -1,17 +1,14 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth'
 import { UserRole } from '@/types/api'
 import { AdminDashboard } from '@/features/dashboard/AdminDashboard'
 import { TeacherDashboard } from '@/features/dashboard/TeacherDashboard'
 import { ParentDashboard } from '@/features/dashboard/ParentDashboard'
+import { requireAuth } from '@/lib/auth-utils'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context }) => {
-    if (!context.auth.isAuthenticated) {
-      throw redirect({
-        to: '/login',
-      })
-    }
+    requireAuth(context.auth)
   },
   component: Dashboard,
 })

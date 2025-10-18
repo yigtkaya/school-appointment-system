@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react' 
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
-import { useNavigate } from '@tanstack/react-router'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -9,12 +8,6 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuthStore()
-  const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await logout()
-    navigate({ to: '/login' })
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,7 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                 {user?.role}
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={logout}>
                 Logout
               </Button>
             </div>

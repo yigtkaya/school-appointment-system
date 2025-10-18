@@ -1,20 +1,16 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import type { User } from '@/types/api'
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
-import { useAuthStore } from '@/stores/auth'
 
-export const Route = createRootRoute({
+export interface RouterContext {
+  auth: {
+    isAuthenticated: boolean
+    user: User | null
+  }
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
-  beforeLoad: async () => {
-    // Initialize auth state by checking for stored token
-    await useAuthStore.getState().checkAuth()
-    
-    return {
-      auth: {
-        isAuthenticated: useAuthStore.getState().isAuthenticated,
-        user: useAuthStore.getState().user,
-      },
-    }
-  },
 })
 
 function RootComponent() {

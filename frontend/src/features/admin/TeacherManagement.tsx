@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { teachersAPI } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,31 +6,18 @@ import { Plus, Edit, Trash2 } from 'lucide-react'
 import { TeacherCreateForm } from './TeacherCreateForm'
 import { TeacherEditForm } from './TeacherEditForm'
 import type { Teacher } from '@/types/api'
+import { useTeachers, useDeleteTeacher } from '@/hooks'
 
 export function TeacherManagement() {
+  const { data: teachers, isLoading, error } = useTeachers()
+  const deleteTeacherMutation = useDeleteTeacher()
+  
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
-  const queryClient = useQueryClient()
 
-  const { data: teachers, isLoading, error } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersAPI.getAll(),
-  })
-
-  const deleteTeacherMutation = useMutation({
-    mutationFn: (teacherId: string) => teachersAPI.delete(teacherId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] })
-    },
-  })
-
-  const handleDeleteTeacher = async (teacher: Teacher) => {
-    if (window.confirm(`Are you sure you want to delete ${teacher.user?.full_name}? This action cannot be undone.`)) {
-      try {
-        await deleteTeacherMutation.mutateAsync(teacher.id)
-      } catch (error) {
-        console.error('Failed to delete teacher:', error)
-      }
+  const handleDeleteTeacher = (teacher: Teacher) => {
+    if (confirm(`Are you sure you want to delete ${teacher.user?.full_name}?`)) {
+      deleteTeacherMutation.mutate(parseInt(teacher.id as unknown as string))
     }
   }
 
@@ -144,7 +129,6 @@ export function TeacherManagement() {
           onClose={() => setShowCreateForm(false)}
           onSuccess={() => {
             setShowCreateForm(false)
-            queryClient.invalidateQueries({ queryKey: ['teachers'] })
           }}
         />
       )}
@@ -156,7 +140,6 @@ export function TeacherManagement() {
           onClose={() => setEditingTeacher(null)}
           onSuccess={() => {
             setEditingTeacher(null)
-            queryClient.invalidateQueries({ queryKey: ['teachers'] })
           }}
         />
       )}

@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useLogin } from '@/hooks/auth'
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
+  email: z.email('Please enter a valid email'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -13,7 +13,8 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm() {
   const navigate = useNavigate()
-  const { login, isLoading, error } = useAuthStore()
+  const search = useSearch({ from: '/login' })
+  const loginMutation = useLogin()
   
   const {
     register,
@@ -24,12 +25,9 @@ export function LoginForm() {
   })
 
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      await login(data.email, data.password)
-      navigate({ to: '/' })
-    } catch (error) {
-      // Error is handled by the store
-    }
+      await loginMutation.mutateAsync(data)
+      // Navigate to the intended destination or dashboard
+      navigate({ to: search.redirect || '/dashboard' })
   }
 
   return (
@@ -42,9 +40,11 @@ export function LoginForm() {
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
+          {loginMutation.error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600">
+                {loginMutation.error instanceof Error ? loginMutation.error.message : 'Login failed'}
+              </p>
             </div>
           )}
           
@@ -85,10 +85,10 @@ export function LoginForm() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
           

@@ -31,7 +31,7 @@ interface SlotEditFormProps {
   onSuccess: () => void
 }
 
-export function SlotEditForm({ slot, teachers, onClose, onSuccess }: SlotEditFormProps) {
+export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
   const [error, setError] = useState<string | null>(null)
 
   const {

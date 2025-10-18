@@ -12,7 +12,7 @@ export const teachersAPI = {
     return response.teachers
   },
 
-  async getById(id: string): Promise<Teacher> {
+  async getById(id: number): Promise<Teacher> {
     return apiClient.get<Teacher>(`/teachers/${id}`)
   },
 
@@ -24,11 +24,11 @@ export const teachersAPI = {
     return apiClient.put<Teacher>(`/teachers/${id}`, data)
   },
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     return apiClient.delete(`/teachers/${id}`)
   },
 
-  async getByUserId(userId: string): Promise<Teacher> {
+  async getByUserId(userId: number): Promise<Teacher> {
     return apiClient.get<Teacher>(`/teachers/user/${userId}`)
   }
 }
