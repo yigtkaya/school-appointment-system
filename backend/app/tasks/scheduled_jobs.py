@@ -7,7 +7,7 @@ from sqlalchemy import and_, or_
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.models.appointment import Appointment, AppointmentStatus
-from app.models.slot import Slot
+from app.models.slot import AvailableSlot
 from app.models.notification import Notification, NotificationStatus
 from app.tasks.notifications import send_appointment_reminder
 
@@ -36,11 +36,11 @@ def send_appointment_reminders():
         reminder_end = now + timedelta(hours=25)
 
         # Find confirmed appointments in the next 24 hours that haven't been reminded
-        appointments = db.query(Appointment).join(Slot).filter(
+        appointments = db.query(Appointment).join(AvailableSlot).filter(
             and_(
                 Appointment.status == AppointmentStatus.CONFIRMED,
-                Slot.start_time >= reminder_start,
-                Slot.start_time <= reminder_end,
+                AvailableSlot.start_time >= reminder_start,
+                AvailableSlot.start_time <= reminder_end,
                 or_(
                     Appointment.reminder_sent == False,
                     Appointment.reminder_sent == None
@@ -94,10 +94,10 @@ def reset_weekly_slots():
         one_week_ago = now - timedelta(days=7)
 
         # Delete old unbooked slots (from previous weeks)
-        deleted_slots = db.query(Slot).filter(
+        deleted_slots = db.query(AvailableSlot).filter(
             and_(
-                Slot.is_booked == False,
-                Slot.start_time < one_week_ago
+                AvailableSlot.is_booked == False,
+                AvailableSlot.start_time < one_week_ago
             )
         ).delete(synchronize_session=False)
 
@@ -165,10 +165,10 @@ def mark_completed_appointments():
         now = datetime.utcnow()
 
         # Find confirmed appointments whose slot end time has passed
-        appointments = db.query(Appointment).join(Slot).filter(
+        appointments = db.query(Appointment).join(AvailableSlot).filter(
             and_(
                 Appointment.status == AppointmentStatus.CONFIRMED,
-                Slot.end_time < now
+                AvailableSlot.end_time < now
             )
         ).all()
 
@@ -241,16 +241,16 @@ def generate_weekly_slots(teacher_id: str, slot_template: dict):
                         )
 
                         # Check if slot already exists
-                        existing_slot = db.query(Slot).filter(
+                        existing_slot = db.query(AvailableSlot).filter(
                             and_(
-                                Slot.teacher_id == teacher_id,
-                                Slot.start_time == start_time,
-                                Slot.end_time == end_time
+                                AvailableSlot.teacher_id == teacher_id,
+                                AvailableSlot.start_time == start_time,
+                                AvailableSlot.end_time == end_time
                             )
                         ).first()
 
                         if not existing_slot:
-                            new_slot = Slot(
+                            new_slot = AvailableSlot(
                                 teacher_id=teacher_id,
                                 start_time=start_time,
                                 end_time=end_time,
@@ -301,14 +301,14 @@ def send_daily_summary(teacher_id: str, target_date: datetime):
         day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
 
-        appointments = db.query(Appointment).join(Slot).filter(
+        appointments = db.query(Appointment).join(AvailableSlot).filter(
             and_(
                 Appointment.teacher_id == teacher_id,
                 Appointment.status == AppointmentStatus.CONFIRMED,
-                Slot.start_time >= day_start,
-                Slot.start_time < day_end
+                AvailableSlot.start_time >= day_start,
+                AvailableSlot.start_time < day_end
             )
-        ).order_by(Slot.start_time).all()
+        ).order_by(AvailableSlot.start_time).all()
 
         if not appointments:
             return {

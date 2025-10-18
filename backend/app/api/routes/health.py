@@ -15,7 +15,7 @@ router = APIRouter()
 settings = get_settings()
 
 
-@router.get("/health")
+@router.get("/")
 async def basic_health_check():
     """Basic health check endpoint for load balancers."""
     return {
@@ -26,7 +26,7 @@ async def basic_health_check():
     }
 
 
-@router.get("/health/live")
+@router.get("/live")
 async def liveness_check():
     """Kubernetes liveness probe - checks if the service is running."""
     return {
@@ -35,7 +35,7 @@ async def liveness_check():
     }
 
 
-@router.get("/health/ready")
+@router.get("/ready")
 async def readiness_check(db: Session = Depends(get_db)):
     """
     Kubernetes readiness probe - comprehensive dependency checks.
@@ -134,7 +134,7 @@ async def readiness_check(db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail=checks)
 
 
-@router.get("/health/startup")
+@router.get("/startup")
 async def startup_check(db: Session = Depends(get_db)):
     """
     Kubernetes startup probe - checks if application is ready to receive traffic.
@@ -159,7 +159,7 @@ async def startup_check(db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail=checks)
 
 
-@router.get("/health/detailed")
+@router.get("/detailed")
 async def detailed_health_check(db: Session = Depends(get_db)):
     """
     Detailed health information for monitoring dashboards.
