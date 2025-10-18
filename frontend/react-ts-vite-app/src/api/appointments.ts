@@ -13,7 +13,13 @@ export const appointmentsAPI = {
     start_date?: string;
     end_date?: string;
   }): Promise<Appointment[]> {
-    return apiClient.get<Appointment[]>('/appointments', params)
+    const response = await apiClient.get<{
+      appointments: Appointment[];
+      total: number;
+      skip: number;
+      limit: number;
+    }>('/appointments', params)
+    return response.appointments
   },
 
   async getById(id: string): Promise<Appointment> {
@@ -36,26 +42,28 @@ export const appointmentsAPI = {
     return apiClient.delete(`/appointments/${id}`)
   },
 
-  async getByParent(parentId: string): Promise<{
-    appointments: Appointment[];
-    summary: {
-      total: number;
-      pending: number;
-      confirmed: number;
-      completed: number;
-    };
-  }> {
-    return apiClient.get(`/appointments/parent/${parentId}/appointments`)
+  async getParentAppointments(parentId: string): Promise<Appointment[]> {
+    const response = await apiClient.get<{
+      appointments: Appointment[];
+      summary: {
+        total: number;
+        pending: number;
+        confirmed: number;
+        completed: number;
+      };
+    }>(`/appointments/parent/${parentId}/appointments`)
+    return response.appointments
   },
 
-  async getByTeacher(teacherId: string): Promise<{
-    appointments: Appointment[];
-    summary: {
-      total: number;
-      today: number;
-      this_week: number;
-    };
-  }> {
-    return apiClient.get(`/appointments/teacher/${teacherId}/appointments`)
+  async getTeacherAppointments(teacherId: string): Promise<Appointment[]> {
+    const response = await apiClient.get<{
+      appointments: Appointment[];
+      summary: {
+        total: number;
+        today: number;
+        this_week: number;
+      };
+    }>(`/appointments/teacher/${teacherId}/appointments`)
+    return response.appointments
   }
 }

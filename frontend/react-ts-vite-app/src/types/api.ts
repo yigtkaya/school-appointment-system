@@ -87,6 +87,12 @@ export interface ParentCreate {
   phone_number?: string;
 }
 
+export interface ParentUpdate {
+  student_name?: string;
+  student_class?: string;
+  phone_number?: string;
+}
+
 // Slot Types
 export interface AvailableSlot {
   id: string;
@@ -109,6 +115,25 @@ export interface SlotCreate {
   end_time: string;
   week_start_date: string;
 }
+
+export interface SlotUpdate {
+  day_of_week?: number;
+  start_time?: string;
+  end_time?: string;
+  week_start_date?: string;
+}
+
+export interface SlotBulkCreate {
+  teacher_id: string;
+  slots: Array<{
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+  }>;
+  week_start_date: string;
+}
+
+export type Slot = AvailableSlot;
 
 // Appointment Types
 export interface Appointment {
@@ -162,6 +187,93 @@ export interface DailySchedule {
   date: string;
   slots: AvailableSlot[];
   appointments: Appointment[];
+  teacher?: Teacher;
+  summary: {
+    total_slots: number;
+    available_slots: number;
+    booked_slots: number;
+    total_appointments: number;
+  };
+}
+
+export interface MonthlyCalendar {
+  year: number;
+  month: number;
+  weeks: Array<{
+    week_start: string;
+    week_end: string;
+    days: Array<{
+      date: string;
+      slots_count: number;
+      appointments_count: number;
+      available_slots: number;
+    }>;
+  }>;
+  summary: {
+    total_slots: number;
+    total_appointments: number;
+    available_slots: number;
+  };
+}
+
+export interface WeeklySchedule {
+  teacher: Teacher;
+  week_start: string;
+  week_end: string;
+  schedule: Record<string, AvailableSlot[]>;
+  statistics: {
+    total_slots: number;
+    available_slots: number;
+    booked_slots: number;
+    total_appointments: number;
+    busiest_day: string;
+    utilization_rate: number;
+  };
+}
+
+export interface TimeSlotSuggestion {
+  suggested_time: string;
+  end_time: string;
+  duration_minutes: number;
+  confidence_score: number;
+  reason: string;
+}
+
+export interface BulkSlotAdvanced {
+  teacher_id: string;
+  pattern: {
+    days_of_week: number[];
+    start_time: string;
+    end_time: string;
+    slot_duration_minutes: number;
+    break_duration_minutes?: number;
+  };
+  date_range: {
+    start_date: string;
+    end_date: string;
+  };
+  exclusions?: {
+    dates?: string[];
+    time_ranges?: Array<{
+      start_time: string;
+      end_time: string;
+    }>;
+  };
+}
+
+// Notification Types
+export interface Notification {
+  id: string;
+  recipient_email: string;
+  subject: string;
+  message: string;
+  status: 'pending' | 'sent' | 'failed';
+  type: 'confirmation' | 'cancellation' | 'reminder' | 'manual';
+  appointment_id?: string;
+  error_message?: string;
+  sent_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Health Check Types

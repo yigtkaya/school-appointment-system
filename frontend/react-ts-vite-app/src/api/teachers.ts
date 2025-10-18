@@ -3,7 +3,13 @@ import type { Teacher, TeacherCreate } from '@/types/api'
 
 export const teachersAPI = {
   async getAll(params?: { subject?: string; branch?: string }): Promise<Teacher[]> {
-    return apiClient.get<Teacher[]>('/teachers', params)
+    const response = await apiClient.get<{
+      teachers: Teacher[];
+      total: number;
+      skip: number;
+      limit: number;
+    }>('/teachers', params)
+    return response.teachers
   },
 
   async getById(id: string): Promise<Teacher> {

@@ -35,7 +35,7 @@ export class APIClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -54,11 +54,11 @@ export class APIClient {
 
     try {
       const response = await fetch(url, config)
-      
+
       // Handle different response types
       const contentType = response.headers.get('content-type')
       let data
-      
+
       if (contentType?.includes('application/json')) {
         data = await response.json()
       } else {
@@ -72,7 +72,7 @@ export class APIClient {
           // Redirect to login or trigger auth state update
           window.dispatchEvent(new CustomEvent('auth:logout'))
         }
-        
+
         const error: APIError = data
         throw new Error(typeof error.detail === 'string' ? error.detail : 'An error occurred')
       }
@@ -87,10 +87,19 @@ export class APIClient {
   }
 
   // HTTP Methods
-  async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-    const searchParams = params ? `?${new URLSearchParams(params)}` : ''
-    return this.request<T>(`${endpoint}${searchParams}`)
-  }
+async get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T> {
+  const searchParams = params
+    ? `?${new URLSearchParams(
+        Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
+          acc[key] = String(value)
+          return acc
+        }, {})
+      )}`
+    : ''
+
+  return this.request<T>(`${endpoint}${searchParams}`)
+}
+
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
