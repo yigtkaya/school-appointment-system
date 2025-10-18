@@ -13,64 +13,140 @@ build/
 .coverage
 htmlcov/
 .tox/
+*.pyc
 
 # Virtual environments
 venv/
 env/
 ENV/
 .venv
+.env/
+pipenv/
 
-# IDE
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+*.sublime-*
+.atom/
+.phpstorm.meta.php
 
 # Environment files
 .env
 .env.local
 .env.*.local
+.env.development
+.env.staging
+.env.production
+.env.test
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 school_appointments.db
+*.dump
+*.sql
 
-# Logs
+# Logs & Monitoring
 *.log
 logs/
 *.log.*
+*.out
+*.err
+monitoring/
+grafana/
+prometheus/
 
 # Celery
 celerybeat-schedule
 celerybeat.pid
+celerybeat-schedule.db
 
 # Documentation
 *.md
 !README.md
 docs/
+site/
 
 # Git
 .git/
 .gitignore
 .gitattributes
+.github/
 
-# Docker
+# Docker & Deployment
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+deployment/
+k8s/
+helm/
+terraform/
 
 # Testing
 test_*.py
 tests/
 *.test.py
+coverage.xml
+pytest.ini
+.coverage.*
 
-# Misc
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+.buildkite/
+
+# Package managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Security & Secrets
+.secrets/
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+.aws/
+.gcp/
+
+# Cache & Temporary
+.cache/
+.tmp/
+.temp/
 *.bak
 *.tmp
 temp/
 tmp/
 *.pid
+*.seed
+*.pid.lock
+
+# OS
+Thumbs.db
+.Trash-*
+.nfs*
+
+# Backup files
+*.backup
+*.old
+*.orig
+*.save
+
+# Application specific
+alembic/versions/*.py
+!alembic/versions/__init__.py
+uploads/
+static/uploads/
+media/
