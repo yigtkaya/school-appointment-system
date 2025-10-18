@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const API_BASE_URL = "http://localhost:8002/api/v1"
+export const API_BASE_URL = "http://localhost:8000/api/v1"
 
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("en-US", {

@@ -39,3 +39,4 @@ dmypy.json
 *.sqlite
 *.sqlite3
 .DS_Store
+deployment/.env.*

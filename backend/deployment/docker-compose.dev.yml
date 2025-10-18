@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development Docker Compose Configuration
 # Usage: docker-compose -f deployment/docker-compose.dev.yml up -d
 
@@ -10,8 +8,8 @@ services:
     container_name: school-db-dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-schooladmin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword123}
+      POSTGRES_USER: ${POSTGRES_USER:-appointment_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-appointment_password}
       POSTGRES_DB: ${POSTGRES_DB:-school_appointments}
     ports:
       - "5432:5432"
@@ -19,6 +17,11 @@ services:
       - postgres_dev_data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appointment_user -d school_appointments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis
   redis:
@@ -31,6 +34,97 @@ services:
       - redis_dev_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: school-backend-dev
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../app:/app/app:ro
+      - ../alembic:/app/alembic:ro
+      - ../scripts:/app/scripts:ro
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        alembic upgrade head &&
+        echo 'Starting FastAPI server...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: school-celery-worker-dev
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - ../app:/app/app:ro
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    user: appuser
+    command: celery -A app.core.celery_app worker --loglevel=info
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: school-celery-beat-dev
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - ../app:/app/app:ro
+      - celery_beat_data:/app/celerybeat
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    user: appuser
+    command: >
+      sh -c "
+        mkdir -p /app/celerybeat &&
+        celery -A app.core.celery_app beat --loglevel=info --pidfile=/app/celerybeat/celerybeat.pid --schedule=/app/celerybeat/celerybeat-schedule
+      "
 
 networks:
   app-network:
@@ -39,3 +133,4 @@ networks:
 volumes:
   postgres_dev_data:
   redis_dev_data:
+  celery_beat_data:
