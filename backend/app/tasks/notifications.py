@@ -7,7 +7,7 @@ from celery import current_task
 
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
-from app.services.notification import EmailService
+from app.services.notification import NotificationService
 from app.models.notification import Notification, NotificationStatus, NotificationType
 from app.models.appointment import Appointment
 from app.models.user import User
@@ -47,7 +47,7 @@ def send_email_async(
     db = get_db()
 
     try:
-        email_service = EmailService()
+        email_service = NotificationService()
         success = email_service.send_email(
             to_email=recipient_email,
             subject=subject,

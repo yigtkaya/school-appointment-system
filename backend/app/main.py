@@ -86,7 +86,8 @@ async def readiness_check():
     # Check database connection
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
+        from sqlalchemy import text
+        db.execute(text("SELECT 1"))
         db.close()
         checks["database"] = "connected"
     except Exception as e:
