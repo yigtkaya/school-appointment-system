@@ -268,6 +268,32 @@ export interface BulkSlotAdvanced {
   };
 }
 
+// Smart Slot Types
+export interface SmartSlotCreate {
+  teacher_id: string;
+  days_of_week: number[];
+  start_time: string;
+  end_time: string;
+  meeting_duration_minutes: number;
+  week_start_date: string;
+}
+
+export interface SmartSlotPreview {
+  total_slots: number;
+  slots_per_day: number;
+  meeting_duration_minutes: number;
+  days: string[];
+  time_range: string;
+  total_hours: number;
+  preview_slots: Array<{
+    day_of_week: number;
+    day_name: string;
+    start_time: string;
+    end_time: string;
+    duration_minutes: number;
+  }>;
+}
+
 // Notification Types
 export interface Notification {
   id: string;

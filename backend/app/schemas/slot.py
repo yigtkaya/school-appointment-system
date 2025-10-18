@@ -188,6 +188,53 @@ class EnhancedWeeklyScheduleResponse(BaseModel):
     time_range: dict = Field(description="Earliest and latest times")
 
 
+class SmartSlotCreate(BaseModel):
+    """Schema for smart slot creation - simple and intuitive."""
+    
+    teacher_id: str = Field(..., description="Teacher ID")
+    days_of_week: list[int] = Field(..., description="Days of week (0=Monday, 6=Sunday)")
+    start_time: time = Field(..., description="Start time of availability block")
+    end_time: time = Field(..., description="End time of availability block")
+    meeting_duration_minutes: int = Field(30, ge=15, le=120, description="Duration of each meeting in minutes")
+    week_start_date: date = Field(..., description="Start date of the week (Monday)")
+    
+    @validator('end_time')
+    def end_time_after_start_time(cls, v, values):
+        """Validate that end time is after start time."""
+        if 'start_time' in values and v <= values['start_time']:
+            raise ValueError('End time must be after start time')
+        return v
+    
+    @validator('week_start_date')
+    def week_start_is_monday(cls, v):
+        """Validate that week_start_date is a Monday."""
+        if v.weekday() != 0:  # Monday is 0
+            raise ValueError('Week start date must be a Monday')
+        return v
+    
+    @validator('days_of_week')
+    def valid_days(cls, v):
+        """Validate days of week."""
+        if not v:
+            raise ValueError('At least one day must be selected')
+        for day in v:
+            if day < 0 or day > 6:
+                raise ValueError('Days must be between 0 (Monday) and 6 (Sunday)')
+        return v
+
+
+class SmartSlotPreview(BaseModel):
+    """Schema for smart slot preview before creation."""
+    
+    total_slots: int
+    slots_per_day: int
+    meeting_duration_minutes: int
+    days: list[str]
+    time_range: str
+    total_hours: float
+    preview_slots: list[dict] = Field(description="Preview of slots to be created")
+
+
 class AdvancedBulkSlotCreate(BaseModel):
     """Advanced schema for creating multiple slots with patterns."""
     

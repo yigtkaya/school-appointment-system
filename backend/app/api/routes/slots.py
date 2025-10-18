@@ -17,6 +17,8 @@ from app.schemas.slot import (
     SlotWithTeacher,
     SlotListResponse,
     BulkSlotCreate,
+    SmartSlotCreate,
+    SmartSlotPreview,
     WeeklyScheduleResponse,
 )
 from app.exceptions.http import ResourceNotFoundException, ConflictException, BadRequestException
@@ -295,3 +297,142 @@ async def get_teacher_weekly_schedule(
         available_slots=available_count,
         booked_slots=booked_count
     )
+
+
+@router.post("/smart-preview", response_model=SmartSlotPreview)
+async def preview_smart_slots(
+    smart_slot: SmartSlotCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_teacher_or_admin),
+) -> SmartSlotPreview:
+    """Preview smart slot creation without actually creating them."""
+    
+    # Check if teacher exists
+    db_teacher = teacher.get(db, id=smart_slot.teacher_id)
+    if not db_teacher:
+        raise ResourceNotFoundException("Teacher not found")
+    
+    # Check if current user is the teacher or an admin
+    if current_user.role != "admin" and db_teacher.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to create slots for this teacher")
+    
+    # Calculate slot details
+    from datetime import timedelta, datetime, time
+    
+    # Calculate duration in minutes
+    start_datetime = datetime.combine(smart_slot.week_start_date, smart_slot.start_time)
+    end_datetime = datetime.combine(smart_slot.week_start_date, smart_slot.end_time)
+    total_minutes = int((end_datetime - start_datetime).total_seconds() / 60)
+    
+    # Calculate number of slots per day
+    slots_per_day = total_minutes // smart_slot.meeting_duration_minutes
+    total_slots = slots_per_day * len(smart_slot.days_of_week)
+    
+    # Get day names
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    selected_days = [day_names[day] for day in smart_slot.days_of_week]
+    
+    # Generate preview slots
+    preview_slots = []
+    for day_idx in smart_slot.days_of_week:
+        current_time = smart_slot.start_time
+        for slot_num in range(slots_per_day):
+            slot_start = current_time
+            # Add duration to get end time
+            slot_end_datetime = datetime.combine(smart_slot.week_start_date, current_time) + timedelta(minutes=smart_slot.meeting_duration_minutes)
+            slot_end = slot_end_datetime.time()
+            
+            preview_slots.append({
+                "day_of_week": day_idx,
+                "day_name": day_names[day_idx],
+                "start_time": slot_start.strftime("%H:%M"),
+                "end_time": slot_end.strftime("%H:%M"),
+                "duration_minutes": smart_slot.meeting_duration_minutes
+            })
+            
+            # Move to next slot time
+            current_time = slot_end
+    
+    return SmartSlotPreview(
+        total_slots=total_slots,
+        slots_per_day=slots_per_day,
+        meeting_duration_minutes=smart_slot.meeting_duration_minutes,
+        days=selected_days,
+        time_range=f"{smart_slot.start_time.strftime('%H:%M')} - {smart_slot.end_time.strftime('%H:%M')}",
+        total_hours=total_minutes / 60,
+        preview_slots=preview_slots
+    )
+
+
+@router.post("/smart-create", response_model=List[SlotWithTeacher])
+async def create_smart_slots(
+    smart_slot: SmartSlotCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_teacher_or_admin),
+) -> List[SlotWithTeacher]:
+    """Create multiple time slots intelligently based on availability block."""
+    
+    # Check if teacher exists
+    db_teacher = teacher.get(db, id=smart_slot.teacher_id)
+    if not db_teacher:
+        raise ResourceNotFoundException("Teacher not found")
+    
+    # Check if current user is the teacher or an admin
+    if current_user.role != "admin" and db_teacher.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to create slots for this teacher")
+    
+    # Generate slots intelligently
+    from datetime import timedelta, datetime
+    
+    created_slots = []
+    
+    for day_idx in smart_slot.days_of_week:
+        current_time = smart_slot.start_time
+        
+        # Calculate how many slots fit in the time block
+        start_datetime = datetime.combine(smart_slot.week_start_date, smart_slot.start_time)
+        end_datetime = datetime.combine(smart_slot.week_start_date, smart_slot.end_time)
+        total_minutes = int((end_datetime - start_datetime).total_seconds() / 60)
+        slots_count = total_minutes // smart_slot.meeting_duration_minutes
+        
+        for slot_num in range(slots_count):
+            # Calculate slot end time
+            slot_end_datetime = datetime.combine(smart_slot.week_start_date, current_time) + timedelta(minutes=smart_slot.meeting_duration_minutes)
+            slot_end = slot_end_datetime.time()
+            
+            # Check for conflicts
+            if slot.check_time_conflict(
+                db,
+                teacher_id=smart_slot.teacher_id,
+                day_of_week=day_idx,
+                start_time=current_time,
+                end_time=slot_end,
+                week_start=smart_slot.week_start_date
+            ):
+                # Skip this slot if there's a conflict, but continue with others
+                current_time = slot_end
+                continue
+            
+            # Create slot
+            slot_create = SlotCreate(
+                teacher_id=smart_slot.teacher_id,
+                day_of_week=day_idx,
+                start_time=current_time,
+                end_time=slot_end,
+                week_start_date=smart_slot.week_start_date
+            )
+            
+            try:
+                db_slot = slot.create(db, obj_in=slot_create)
+                created_slots.append(slot.get_with_teacher(db, slot_id=db_slot.id))
+            except Exception as e:
+                # Log the error but continue with other slots
+                print(f"Failed to create slot: {e}")
+            
+            # Move to next slot time
+            current_time = slot_end
+    
+    if not created_slots:
+        raise ConflictException("No slots could be created. Check for time conflicts.")
+    
+    return created_slots

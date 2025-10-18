@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse } from '@/types/api'
+import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse, SmartSlotCreate, SmartSlotPreview } from '@/types/api'
 
 export const slotsAPI = {
   // Get all available slots with filters
@@ -49,5 +49,15 @@ export const slotsAPI = {
     week_end: string
   }> => {
     return apiClient.get(`/slots/teacher/${teacherId}/schedule`, params)
+  },
+
+  // Smart slot creation - preview slots before creating
+  previewSmartSlots: async (data: SmartSlotCreate): Promise<SmartSlotPreview> => {
+    return apiClient.post('/slots/smart-preview', data)
+  },
+
+  // Smart slot creation - create slots intelligently
+  createSmartSlots: async (data: SmartSlotCreate): Promise<Slot[]> => {
+    return apiClient.post('/slots/smart-create', data)
   },
 }
