@@ -3,8 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { teachersAPI, type TeacherCreate } from '@/api'
-import { apiClient } from '@/api/client'
+import { teachersAPI, usersAPI, UserRole } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
@@ -38,17 +37,17 @@ export function TeacherCreateForm({ onClose, onSuccess }: TeacherCreateFormProps
 
   const createTeacherMutation = useMutation({
     mutationFn: async (data: CreateTeacherFormData) => {
-      // First create the user
-      const user = await apiClient.post('/auth/register', {
+      // First create the user using admin endpoint
+      const user = await usersAPI.create({
         email: data.email,
         password: data.password,
         full_name: data.full_name,
-        role: 'teacher',
+        role: UserRole.TEACHER,
       })
 
       // Then create the teacher profile
       return teachersAPI.create({
-        user_id: user.user_id,
+        user_id: user.id,
         subject: data.subject,
         branch: data.branch || undefined,
         bio: data.bio || undefined,
