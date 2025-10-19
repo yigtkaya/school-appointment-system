@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatTime } from '@/lib/day-time-utils'
+import { AppointmentBookingModal } from '@/features/appointments'
 
 enum TabOption {
   OVERVIEW = 'overview',
@@ -18,6 +19,8 @@ enum TabOption {
 export function ParentDashboard() {
   const { user } = useAuthStore()
   const [selectedTab, setSelectedTab] = useState<TabOption>(TabOption.OVERVIEW)
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | undefined>()
 
   const { data: parentAppointments } = useQuery({
     queryKey: ['parent-appointments', user?.id],
@@ -182,14 +185,32 @@ export function ParentDashboard() {
     <Card>
       <CardHeader>
         <CardTitle>Book New Appointment</CardTitle>
-        <p className="text-sm text-gray-600">Select a teacher and available time slot</p>
+        <p className="text-sm text-gray-600">Choose from available teachers and book your appointment</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Quick Book Button */}
+          <div className="text-center py-8">
+            <Button 
+              onClick={() => {
+                setSelectedTeacherId(undefined)
+                setIsBookingModalOpen(true)
+              }}
+              size="lg"
+              className="px-8"
+            >
+              Book New Appointment
+            </Button>
+            <p className="text-sm text-gray-600 mt-2">
+              Start the booking process and select from available teachers and time slots
+            </p>
+          </div>
+
+          {/* Teacher Quick Actions */}
           <div>
-            <h3 className="font-medium mb-4">Available Teachers</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {teachers?.map((teacher) => (
+            <h3 className="font-medium mb-4">Quick Book with Teacher</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {teachers?.slice(0, 6).map((teacher) => (
                 <div key={teacher.id} className="border rounded-lg p-4">
                   <div className="font-medium">{teacher.user?.full_name}</div>
                   <div className="text-sm text-gray-600">{teacher.subject}</div>
@@ -197,35 +218,34 @@ export function ParentDashboard() {
                     <div className="text-sm text-gray-500">Branch: {teacher.branch}</div>
                   )}
                   {teacher.bio && (
-                    <div className="text-sm text-gray-500 mt-2">{teacher.bio}</div>
+                    <div className="text-sm text-gray-500 mt-2 line-clamp-2">{teacher.bio}</div>
                   )}
-                  <Button className="mt-3" size="sm">
-                    View Slots
+                  <Button 
+                    className="mt-3 w-full" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTeacherId(teacher.id)
+                      setIsBookingModalOpen(true)
+                    }}
+                  >
+                    Book with {teacher.user?.full_name?.split(' ')[0]}
                   </Button>
                 </div>
               ))}
             </div>
-          </div>
-
-          <div>
-            <h3 className="font-medium mb-4">Available Time Slots</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableSlots?.slots?.slice(0, 9).map((slot) => (
-                <div key={slot.id} className="border rounded-lg p-4">
-                  <div className="font-medium">{slot.teacher?.user?.full_name}</div>
-                  <div className="text-sm text-gray-600">{slot.teacher?.subject}</div>
-                  <div className="text-sm text-gray-500">
-                    {formatDate(slot.week_start_date)}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                  </div>
-                  <Button className="mt-3 w-full" size="sm">
-                    Book This Slot
-                  </Button>
-                </div>
-              ))}
-            </div>
+            {teachers && teachers.length > 6 && (
+              <div className="text-center mt-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedTeacherId(undefined)
+                    setIsBookingModalOpen(true)
+                  }}
+                >
+                  View All Teachers
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
@@ -250,8 +270,16 @@ export function ParentDashboard() {
                 <div className="text-sm text-gray-600 mt-3">{teacher.bio}</div>
               )}
               <div className="mt-4 space-x-2">
-                <Button size="sm">View Schedule</Button>
-                <Button variant="outline" size="sm">Book Appointment</Button>
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTeacherId(teacher.id)
+                    setIsBookingModalOpen(true)
+                  }}
+                >
+                  Book Appointment
+                </Button>
+                <Button variant="outline" size="sm">View Schedule</Button>
               </div>
             </div>
           ))}
@@ -291,6 +319,16 @@ export function ParentDashboard() {
           {selectedTab === 'teachers' && renderTeachers()}
         </div>
       </div>
+
+      {/* Appointment Booking Modal */}
+      <AppointmentBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => {
+          setIsBookingModalOpen(false)
+          setSelectedTeacherId(undefined)
+        }}
+        teacherId={selectedTeacherId}
+      />
     </DashboardLayout>
   )
 }

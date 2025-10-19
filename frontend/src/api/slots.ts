@@ -35,7 +35,7 @@ export const slotsAPI = {
   },
 
   // Delete slot (if not booked)
-  delete: async (slotId: number): Promise<void> => {
+  delete: async (slotId: string): Promise<void> => {
     return apiClient.delete(`/slots/${slotId}`)
   },
 

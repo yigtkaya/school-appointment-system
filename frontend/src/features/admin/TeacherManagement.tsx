@@ -17,7 +17,7 @@ export function TeacherManagement() {
 
   const handleDeleteTeacher = (teacher: Teacher) => {
     if (confirm(`Are you sure you want to delete ${teacher.user?.full_name}?`)) {
-      deleteTeacherMutation.mutate(parseInt(teacher.id as unknown as string))
+      deleteTeacherMutation.mutate(teacher.id)
     }
   }
 

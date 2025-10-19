@@ -39,7 +39,7 @@ export const parentsAPI = {
   },
 
   // Delete parent (admin only)
-  delete: async (parentId: number): Promise<void> => {
+  delete: async (parentId: string): Promise<void> => {
     return apiClient.delete(`/parents/${parentId}`)
   },
 

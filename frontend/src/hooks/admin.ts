@@ -39,7 +39,7 @@ export const useUpdateTeacher = () => {
     onSuccess: (data) => {
       toast.success('Teacher has been updated.')
       queryClient.invalidateQueries({ queryKey: teachersKeys.all })
-      queryClient.invalidateQueries({ queryKey: teachersKeys.detail(parseInt(data.id)) })
+      queryClient.invalidateQueries({ queryKey: teachersKeys.detail(data.id) })
     },
     onError: () => {
       toast.error('Error updating teacher')
@@ -52,7 +52,7 @@ export const useDeleteTeacher = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (teacherId: number) => teachersAPI.delete(teacherId),
+    mutationFn: (teacherId: string) => teachersAPI.delete(teacherId),
     onSuccess: () => {
       toast.success('Teacher has been deleted.')
       queryClient.invalidateQueries({ queryKey: teachersKeys.all })
@@ -106,7 +106,7 @@ export const useDeleteParent = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (parentId: number) => parentsAPI.delete(parentId),
+    mutationFn: (parentId: string) => parentsAPI.delete(parentId),
     onSuccess: () => {
       toast.success('Parent has been deleted.')
       queryClient.invalidateQueries({ queryKey: parentsKeys.all })
@@ -193,7 +193,7 @@ export const useDeleteSlot = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (slotId: number) => slotsAPI.delete(slotId),
+    mutationFn: (slotId: string) => slotsAPI.delete(slotId),
     onSuccess: () => {
       toast.success('Slot has been deleted.')
       queryClient.invalidateQueries({ queryKey: slotsKeys.all })

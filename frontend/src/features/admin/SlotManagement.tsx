@@ -38,7 +38,7 @@ export function SlotManagement() {
 
     if (window.confirm(`Are you sure you want to delete this slot? This action cannot be undone.`)) {
       try {
-        await deleteSlotMutation.mutateAsync(parseInt(slot.id))
+        await deleteSlotMutation.mutateAsync(slot.id)
       } catch (error) {
         console.error('Failed to delete slot:', error)
       }

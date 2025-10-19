@@ -8,8 +8,8 @@ export const teachersKeys = {
   all: ['teachers'] as const,
   list: (filters?: { subject?: string; branch?: string }) => 
     [...teachersKeys.all, 'list', filters] as const,
-  detail: (id: number) => [...teachersKeys.all, 'detail', id] as const,
-  byUserId: (userId: number) => [...teachersKeys.all, 'byUserId', userId] as const,
+  detail: (id: string) => [...teachersKeys.all, 'detail', id] as const,
+  byUserId: (userId: string) => [...teachersKeys.all, 'byUserId', userId] as const,
 }
 
 // Hook to fetch all teachers with optional filters
@@ -22,7 +22,7 @@ export const useTeachers = (filters?: { subject?: string; branch?: string }) => 
 }
 
 // Hook to fetch a single teacher by ID
-export const useTeacherById = (id: number) => {
+export const useTeacherById = (id: string) => {
   return useQuery({
     queryKey: teachersKeys.detail(id),
     queryFn: () => teachersAPI.getById(id),
@@ -32,7 +32,7 @@ export const useTeacherById = (id: number) => {
 }
 
 // Hook to fetch a teacher by user ID
-export const useTeacherByUserId = (userId: number) => {
+export const useTeacherByUserId = (userId: string) => {
   return useQuery({
     queryKey: teachersKeys.byUserId(userId),
     queryFn: () => teachersAPI.getByUserId(userId),
