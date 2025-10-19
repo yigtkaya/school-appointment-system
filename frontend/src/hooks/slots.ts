@@ -52,7 +52,7 @@ export const useTeacherSchedule = (teacherId: string, weekStart?: string) => {
   return useQuery({
     queryKey: slotsKeys.schedule(teacherId, weekStart),
     queryFn: () => slotsAPI.getTeacherSchedule(teacherId, weekStart ? { week_start: weekStart } : undefined),
-    staleTime: 2 * 60 * 1000,
+    staleTime: 2 * 600 * 1000,
     enabled: !!teacherId,
   })
 }

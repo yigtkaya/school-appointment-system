@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { slotsAPI } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Calendar, Clock, User } from 'lucide-react'
+import { Calendar, Clock } from 'lucide-react'
 import type { AvailableSlot } from '@/types/api'
+import { useTeacherSchedule } from '@/hooks/slots'
 
 interface SlotSelectorProps {
   teacherId: string
@@ -28,13 +26,7 @@ export function SlotSelector({
     weekStartDate || getCurrentWeekStart()
   )
 
-  const { data: scheduleData, isLoading, error } = useQuery({
-    queryKey: ['teacher-schedule', teacherId, currentWeekStart],
-    queryFn: () => slotsAPI.getTeacherSchedule(teacherId, { 
-      week_start: currentWeekStart 
-    }),
-    enabled: !!teacherId
-  })
+  const { data: scheduleData, isLoading, error } = useTeacherSchedule(teacherId, currentWeekStart)
 
   const goToPreviousWeek = () => {
     const prevWeek = new Date(currentWeekStart)
@@ -86,7 +78,7 @@ export function SlotSelector({
     )
   }
 
-  const { teacher, schedule, week_start, week_end } = scheduleData || {}
+  const { week_start_date, slots_by_day, available_slots } = scheduleData || {}
 
   return (
     <Card>
@@ -95,13 +87,9 @@ export function SlotSelector({
           <Calendar className="h-5 w-5" />
           Available Time Slots
         </CardTitle>
-        {teacher && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <User className="h-4 w-4" />
-            <span>{teacher.user.full_name}</span>
-            <Badge variant="secondary">{teacher.subject}</Badge>
-          </div>
-        )}
+        <div className="text-sm text-gray-600">
+          {available_slots || 0} available slots this week
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Week Navigation */}
@@ -110,7 +98,7 @@ export function SlotSelector({
             ← Previous Week
           </Button>
           <div className="text-sm font-medium">
-            {formatWeekRange(week_start, week_end)}
+            {formatWeekRange(week_start_date, getWeekEndDate(week_start_date))}
           </div>
           <Button variant="outline" size="sm" onClick={goToNextWeek}>
             Next Week →
@@ -120,9 +108,8 @@ export function SlotSelector({
         {/* Slots Grid */}
         <div className="space-y-3">
           {DAYS_OF_WEEK.map((dayName, dayIndex) => {
-            const dayKey = getDayKey(currentWeekStart, dayIndex)
-            const daySlots = schedule?.[dayKey] || []
-            const availableSlots = daySlots.filter(slot => !slot.is_booked)
+            const daySlots = slots_by_day?.[dayIndex] || []
+            const availableSlots = daySlots.filter((slot: AvailableSlot) => !slot.is_booked)
 
             if (availableSlots.length === 0) {
               return (
@@ -139,7 +126,7 @@ export function SlotSelector({
               <div key={dayName} className="border border-gray-200 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-3">{dayName}</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {availableSlots.map((slot) => (
+                  {availableSlots.map((slot: AvailableSlot) => (
                     <Button
                       key={slot.id}
                       variant={selectedSlot?.id === slot.id ? "default" : "outline"}
@@ -180,10 +167,13 @@ function getCurrentWeekStart(): string {
   return monday.toISOString().split('T')[0]
 }
 
-function getDayKey(weekStart: string, dayIndex: number): string {
-  const date = new Date(weekStart)
-  date.setDate(date.getDate() + dayIndex)
-  return date.toISOString().split('T')[0]
+
+function getWeekEndDate(weekStart?: string): string {
+  if (!weekStart) return ''
+  const startDate = new Date(weekStart)
+  const endDate = new Date(startDate)
+  endDate.setDate(startDate.getDate() + 6)
+  return endDate.toISOString().split('T')[0]
 }
 
 function formatWeekRange(start?: string, end?: string): string {

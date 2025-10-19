@@ -1,41 +1,26 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { appointmentsAPI, teachersAPI, slotsAPI } from '@/api'
+import { appointmentsAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Calendar, Plus, Clock, User, ArrowLeft, ChevronRight } from 'lucide-react'
 import { formatDate, formatTime } from '@/lib/day-time-utils'
 import { AppointmentBookingModal } from '@/features/appointments'
 
-enum TabOption {
-  OVERVIEW = 'overview',
-  APPOINTMENTS = 'appointments',
-  BOOK = 'book',
-  TEACHERS = 'teachers',
-}
+type ViewMode = 'home' | 'appointments' | 'booking'
 
 export function ParentDashboard() {
   const { user } = useAuthStore()
-  const [selectedTab, setSelectedTab] = useState<TabOption>(TabOption.OVERVIEW)
+  const [currentView, setCurrentView] = useState<ViewMode>('home')
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | undefined>()
 
   const { data: parentAppointments } = useQuery({
     queryKey: ['parent-appointments', user?.id],
     queryFn: () => appointmentsAPI.getParentAppointments(user?.id || ''),
     enabled: !!user?.id,
-  })
-
-  const { data: teachers } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersAPI.getAll(),
-  })
-
-  const { data: availableSlots } = useQuery({
-    queryKey: ['available-slots'],
-    queryFn: () => slotsAPI.getAll({ available: true }),
   })
 
   const getStatusBadgeColor = (status: string) => {
@@ -58,276 +43,177 @@ export function ParentDashboard() {
     return appointmentDate >= new Date() && apt.status !== 'cancelled'
   }) || []
 
-  const renderOverview = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{parentAppointments?.length || 0}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Available Teachers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{teachers?.length || 0}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Available Slots</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{availableSlots?.slots?.length || 0}</div>
-        </CardContent>
-      </Card>
+  const renderHomeView = () => (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="w-full max-w-4xl mx-auto px-6">
+        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Welcome back, {user?.full_name?.split(' ')[0]}!
+          </h1>
+          <p className="text-xl text-gray-600">What would you like to do today?</p>
+        </div>
 
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>Upcoming Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {upcomingAppointments.slice(0, 5).map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <div className="font-medium">{appointment.teacher?.user?.full_name}</div>
-                  <div className="text-sm text-gray-600">
-                    Subject: {appointment.teacher?.subject}
-                    {appointment.teacher?.branch && ` - ${appointment.teacher.branch}`}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
-                  </div>
-                  <div className="text-sm text-gray-500">Mode: {appointment.meeting_mode}</div>
-                  {appointment.notes && (
-                    <div className="text-sm text-gray-500 mt-1">Notes: {appointment.notes}</div>
-                  )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Book New Appointment Card */}
+          <Card 
+            className="group hover:shadow-2xl transition-all duration-500 cursor-pointer border-2 border-dashed border-blue-200 hover:border-blue-400 hover:scale-105 animate-in fade-in slide-in-from-left-8 duration-700"
+            onClick={() => {
+              setCurrentView('booking')
+              setIsBookingModalOpen(true)
+            }}
+          >
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-blue-200 transition-colors duration-300">
+                <Plus className="w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">Book New Appointment</h2>
+              <p className="text-gray-600 mb-6">Schedule a meeting with a teacher for your child</p>
+              <div className="flex items-center justify-center text-blue-600 font-medium">
+                Get Started
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* View Appointments Card */}
+          <Card 
+            className="group hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-105 animate-in fade-in slide-in-from-right-8 duration-700"
+            onClick={() => setCurrentView('appointments')}
+          >
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-green-200 transition-colors duration-300">
+                <Calendar className="w-10 h-10 text-green-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">My Appointments</h2>
+              <p className="text-gray-600 mb-6">View and manage your scheduled appointments</p>
+              <div className="space-y-3">
+                <div className="text-3xl font-bold text-gray-900">
+                  {parentAppointments?.length || 0}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getStatusBadgeColor(appointment.status)}>
-                    {appointment.status}
-                  </Badge>
-                  <Button variant="outline" size="sm">Manage</Button>
+                <div className="text-sm text-gray-500">Total appointments</div>
+                <div className="text-lg font-medium text-green-600">
+                  {upcomingAppointments.length} upcoming
                 </div>
               </div>
-            ))}
-            {upcomingAppointments.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                No upcoming appointments. Book a new appointment to get started.
+              <div className="flex items-center justify-center text-green-600 font-medium mt-4">
+                View Details
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 
-  const renderAppointments = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Appointments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {parentAppointments?.map((appointment) => (
-            <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <div className="font-medium">{appointment.teacher?.user?.full_name}</div>
-                <div className="text-sm text-gray-600">
-                  Subject: {appointment.teacher?.subject}
-                  {appointment.teacher?.branch && ` - ${appointment.teacher.branch}`}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
-                </div>
-                <div className="text-sm text-gray-500">Mode: {appointment.meeting_mode}</div>
-                {appointment.notes && (
-                  <div className="text-sm text-gray-500 mt-1">Notes: {appointment.notes}</div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={getStatusBadgeColor(appointment.status)}>
-                  {appointment.status}
-                </Badge>
-                <Button variant="outline" size="sm">View</Button>
-                {appointment.status === 'pending' && (
-                  <Button variant="destructive" size="sm">Cancel</Button>
-                )}
-              </div>
-            </div>
-          ))}
-          {!parentAppointments?.length && (
-            <div className="text-center text-gray-500 py-8">
-              No appointments found. Book your first appointment!
-            </div>
-          )}
+  const renderAppointmentsView = () => (
+    <div className="min-h-screen bg-gray-50 animate-in fade-in slide-in-from-right-8 duration-500">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setCurrentView('home')}
+            className="flex items-center gap-2 hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Button>
         </div>
-      </CardContent>
-    </Card>
-  )
 
-  const renderBooking = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Book New Appointment</CardTitle>
-        <p className="text-sm text-gray-600">Choose from available teachers and book your appointment</p>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Quick Book Button */}
-          <div className="text-center py-8">
-            <Button 
-              onClick={() => {
-                setSelectedTeacherId(undefined)
-                setIsBookingModalOpen(true)
-              }}
-              size="lg"
-              className="px-8"
-            >
-              Book New Appointment
-            </Button>
-            <p className="text-sm text-gray-600 mt-2">
-              Start the booking process and select from available teachers and time slots
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Appointments</h1>
+          <p className="text-gray-600">Manage your scheduled meetings with teachers</p>
+        </div>
 
-          {/* Teacher Quick Actions */}
-          <div>
-            <h3 className="font-medium mb-4">Quick Book with Teacher</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teachers?.slice(0, 6).map((teacher) => (
-                <div key={teacher.id} className="border rounded-lg p-4">
-                  <div className="font-medium">{teacher.user?.full_name}</div>
-                  <div className="text-sm text-gray-600">{teacher.subject}</div>
-                  {teacher.branch && (
-                    <div className="text-sm text-gray-500">Branch: {teacher.branch}</div>
-                  )}
-                  {teacher.bio && (
-                    <div className="text-sm text-gray-500 mt-2 line-clamp-2">{teacher.bio}</div>
-                  )}
-                  <Button 
-                    className="mt-3 w-full" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTeacherId(teacher.id)
-                      setIsBookingModalOpen(true)
-                    }}
-                  >
-                    Book with {teacher.user?.full_name?.split(' ')[0]}
-                  </Button>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              All Appointments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {parentAppointments?.map((appointment, index) => (
+                <div 
+                  key={appointment.id} 
+                  className="flex items-center justify-between p-6 border rounded-lg hover:bg-gray-50 transition-colors animate-in fade-in slide-in-from-bottom-4 duration-300"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900 text-lg">{appointment.teacher?.user?.full_name}</div>
+                      <div className="text-gray-600">
+                        {appointment.teacher?.subject}
+                        {appointment.teacher?.branch && ` - ${appointment.teacher.branch}`}
+                      </div>
+                      <div className="text-gray-500 flex items-center gap-4 mt-1">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
+                        </span>
+                        <span>•</span>
+                        <span>{appointment.meeting_mode}</span>
+                      </div>
+                      {appointment.notes && (
+                        <div className="text-gray-500 mt-2 text-sm">
+                          <strong>Notes:</strong> {appointment.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getStatusBadgeColor(appointment.status)}>
+                      {appointment.status}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      Manage
+                    </Button>
+                  </div>
                 </div>
               ))}
-            </div>
-            {teachers && teachers.length > 6 && (
-              <div className="text-center mt-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedTeacherId(undefined)
-                    setIsBookingModalOpen(true)
-                  }}
-                >
-                  View All Teachers
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderTeachers = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Teachers</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teachers?.map((teacher) => (
-            <div key={teacher.id} className="border rounded-lg p-6">
-              <div className="font-medium text-lg">{teacher.user?.full_name}</div>
-              <div className="text-gray-600 mt-1">{teacher.subject}</div>
-              {teacher.branch && (
-                <div className="text-sm text-gray-500">Branch: {teacher.branch}</div>
+              {!parentAppointments?.length && (
+                <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+                  <h3 className="text-xl font-medium text-gray-500 mb-2">No appointments yet</h3>
+                  <p className="text-gray-400 mb-6">Get started by booking your first appointment</p>
+                  <Button 
+                    onClick={() => {
+                      setCurrentView('booking')
+                      setIsBookingModalOpen(true)
+                    }}
+                    className="px-8"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Book Appointment
+                  </Button>
+                </div>
               )}
-              {teacher.bio && (
-                <div className="text-sm text-gray-600 mt-3">{teacher.bio}</div>
-              )}
-              <div className="mt-4 space-x-2">
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTeacherId(teacher.id)
-                    setIsBookingModalOpen(true)
-                  }}
-                >
-                  Book Appointment
-                </Button>
-                <Button variant="outline" size="sm">View Schedule</Button>
-              </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Parent Dashboard</h1>
-          <p className="text-gray-600">Manage your child's appointments and view teacher information</p>
-        </div>
-
-        <div className="flex space-x-4 border-b">
-          {Object.values(TabOption).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSelectedTab(tab as TabOption)}
-              className={`px-4 py-2 font-medium capitalize ${
-                selectedTab === tab
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {tab === 'book' ? 'Book Appointment' : tab}
-            </button>
-          ))}
-        </div>
-
-        <div>
-          {selectedTab === 'overview' && renderOverview()}
-          {selectedTab === 'appointments' && renderAppointments()}
-          {selectedTab === 'book' && renderBooking()}
-          {selectedTab === 'teachers' && renderTeachers()}
-        </div>
-      </div>
-
+      {currentView === 'home' && renderHomeView()}
+      {currentView === 'appointments' && renderAppointmentsView()}
+      
       {/* Appointment Booking Modal */}
       <AppointmentBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => {
           setIsBookingModalOpen(false)
-          setSelectedTeacherId(undefined)
+          if (currentView === 'booking') {
+            setCurrentView('home')
+          }
         }}
-        teacherId={selectedTeacherId}
       />
     </DashboardLayout>
   )

@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse, SmartSlotCreate, SmartSlotPreview, Teacher } from '@/types/api'
+import type { Slot, SlotCreate, SlotUpdate, SlotBulkCreate, SlotListResponse, SmartSlotCreate, SmartSlotPreview } from '@/types/api'
 
 export const slotsAPI = {
   // Get all available slots with filters
@@ -43,10 +43,12 @@ export const slotsAPI = {
   getTeacherSchedule: async (teacherId: string, params?: {
     week_start?: string
   }): Promise<{
-    teacher: Teacher
-    schedule: Record<string, Slot[]>
-    week_start: string
-    week_end: string
+    teacher_id: string
+    week_start_date: string
+    slots_by_day: Record<number, Slot[]>
+    total_slots: number
+    available_slots: number
+    booked_slots: number
   }> => {
     return apiClient.get(`/slots/teacher/${teacherId}/schedule`, params)
   },
