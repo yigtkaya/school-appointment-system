@@ -5,11 +5,8 @@ import { useTeacherAppointments, useTeacherPendingAppointments, useTeacherTodays
 import { StatsCards } from './components/StatsCards'
 import { PendingAppointments } from './components/PendingAppointments'
 import { TodaysSchedule } from './components/TodaysSchedule'
-import { AllAppointmentsList } from './components/AllAppointmentsList'
-import { CalendarView } from './components/CalendarView'
 import { QuickActionsCard } from './components/QuickActionsCard'
 import { useAppointmentActions } from './hooks/useAppointmentActions'
-import { getWeekStart } from './utils/calendarUtils'
 import { TeacherSlotManagement } from '@/features/teacher/TeacherSlotManagement'
 
 type ViewMode = 'dashboard' | 'all-appointments' | 'calendar' | 'manage-slots'
@@ -18,7 +15,6 @@ export function TeacherDashboard() {
   const { user } = useAuthStore()
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard')
   const { handleConfirm, handleReject, confirmMutation, rejectMutation } = useAppointmentActions()
-  const [currentWeek, setCurrentWeek] = useState(getWeekStart(new Date()))
 
   // Get pending appointments (top priority)
   const { data: pendingAppointments } = useTeacherPendingAppointments(user?.id || '')
@@ -47,8 +43,6 @@ export function TeacherDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <TodaysSchedule appointments={todaysAppointments} />
         <QuickActionsCard
-          onViewCalendar={() => setCurrentView('calendar')}
-          onViewAllAppointments={() => setCurrentView('all-appointments')}
           onManageSlots={() => setCurrentView('manage-slots')}
         />
       </div>
@@ -60,22 +54,6 @@ export function TeacherDashboard() {
       <div className="space-y-6">
 
         {currentView === 'dashboard' && renderDashboard()}
-        {currentView === 'all-appointments' && (
-          <AllAppointmentsList
-            appointments={allAppointments}
-            onConfirm={handleConfirm}
-            onReject={handleReject}
-          />
-        )}
-        {currentView === 'calendar' && (
-          <CalendarView
-            appointments={allAppointments}
-            currentWeek={currentWeek}
-            onWeekChange={setCurrentWeek}
-            onConfirm={handleConfirm}
-            onReject={handleReject}
-          />
-        )}
         {currentView === 'manage-slots' && <TeacherSlotManagement />}
       </div>
     </DashboardLayout>
