@@ -212,6 +212,7 @@ export function ParentDashboard() {
     </div>
   )
 
+
   return (
     <DashboardLayout>
       {currentView === 'home' && renderHomeView()}

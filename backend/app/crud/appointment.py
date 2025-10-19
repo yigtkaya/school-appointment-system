@@ -181,8 +181,8 @@ class CRUDAppointment(CRUDBase[Appointment, AppointmentCreate, AppointmentUpdate
             .join(self.model.slot)
             .filter(
                 and_(
-                    self.model.slot.has(week_start_date__gte=start_date),
-                    self.model.slot.has(week_start_date__lte=end_date)
+                    self.model.slot.has(AvailableSlot.week_start_date >= start_date),
+                    self.model.slot.has(AvailableSlot.week_start_date <= end_date)
                 )
             )
         )
@@ -256,6 +256,50 @@ class CRUDAppointment(CRUDBase[Appointment, AppointmentCreate, AppointmentUpdate
             db.refresh(appointment)
             return appointment
         return None
+    
+    def get_by_user(
+        self, 
+        db: Session, 
+        user_id: str, 
+        skip: int = 0, 
+        limit: int = 100
+    ) -> List[Appointment]:
+        """Get appointments for a user (could be parent or through parent relationship)."""
+        return (
+            db.query(self.model)
+            .options(
+                joinedload(self.model.parent).joinedload(Parent.user),
+                joinedload(self.model.teacher).joinedload(Teacher.user),
+                joinedload(self.model.slot).joinedload(AvailableSlot.teacher).joinedload(Teacher.user)
+            )
+            .filter(self.model.parent_id == user_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    
+    def get_by_slot_and_user(
+        self, 
+        db: Session, 
+        slot_id: str, 
+        user_id: str
+    ) -> Optional[Appointment]:
+        """Get appointment by slot ID and user ID."""
+        return (
+            db.query(self.model)
+            .options(
+                joinedload(self.model.parent).joinedload(Parent.user),
+                joinedload(self.model.teacher).joinedload(Teacher.user),
+                joinedload(self.model.slot).joinedload(AvailableSlot.teacher).joinedload(Teacher.user)
+            )
+            .filter(
+                and_(
+                    self.model.slot_id == slot_id,
+                    self.model.parent_id == user_id
+                )
+            )
+            .first()
+        )
 
 
 appointment = CRUDAppointment(Appointment)

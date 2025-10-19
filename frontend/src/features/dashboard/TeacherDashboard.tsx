@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
-import { Button } from '@/components/ui/button'
 import { useTeacherAppointments, useTeacherPendingAppointments, useTeacherTodaysAppointments } from '@/hooks/appointments'
 import { StatsCards } from './components/StatsCards'
 import { PendingAppointments } from './components/PendingAppointments'
@@ -11,8 +10,9 @@ import { CalendarView } from './components/CalendarView'
 import { QuickActionsCard } from './components/QuickActionsCard'
 import { useAppointmentActions } from './hooks/useAppointmentActions'
 import { getWeekStart } from './utils/calendarUtils'
+import { TeacherSlotManagement } from '@/features/teacher/TeacherSlotManagement'
 
-type ViewMode = 'dashboard' | 'all-appointments' | 'calendar'
+type ViewMode = 'dashboard' | 'all-appointments' | 'calendar' | 'manage-slots'
 
 export function TeacherDashboard() {
   const { user } = useAuthStore()
@@ -49,6 +49,7 @@ export function TeacherDashboard() {
         <QuickActionsCard
           onViewCalendar={() => setCurrentView('calendar')}
           onViewAllAppointments={() => setCurrentView('all-appointments')}
+          onManageSlots={() => setCurrentView('manage-slots')}
         />
       </div>
     </div>
@@ -57,21 +58,6 @@ export function TeacherDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Welcome back, {user?.full_name?.split(' ')[0]}!</h1>
-            <p className="text-gray-600">
-              {pendingAppointments && pendingAppointments.length > 0
-                ? `You have ${pendingAppointments.length} appointment${pendingAppointments.length > 1 ? 's' : ''} waiting for confirmation`
-                : 'All caught up! No pending appointments to review.'}
-            </p>
-          </div>
-          {(currentView === 'all-appointments' || currentView === 'calendar') && (
-            <Button variant="outline" onClick={() => setCurrentView('dashboard')}>
-              ← Back to Dashboard
-            </Button>
-          )}
-        </div>
 
         {currentView === 'dashboard' && renderDashboard()}
         {currentView === 'all-appointments' && (
@@ -90,6 +76,7 @@ export function TeacherDashboard() {
             onReject={handleReject}
           />
         )}
+        {currentView === 'manage-slots' && <TeacherSlotManagement />}
       </div>
     </DashboardLayout>
   )

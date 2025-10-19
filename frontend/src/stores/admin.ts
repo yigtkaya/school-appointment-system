@@ -52,11 +52,19 @@ interface ScheduleFilterActions {
 
 export type ScheduleFilterStore = ScheduleFilterState & ScheduleFilterActions
 
+// Get the start of the current week (Monday)
+const getWeekStart = (date: Date): Date => {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+  return new Date(d.setDate(diff))
+}
+
 export const useScheduleFilterStore = create<ScheduleFilterStore>((set) => ({
   // Initial state
   selectedTeacher: '',
   viewMode: 'list',
-  currentWeek: new Date(),
+  currentWeek: getWeekStart(new Date()),
 
   // Actions
   setSelectedTeacher: (teacherId: string) => {
@@ -76,11 +84,11 @@ export const useScheduleFilterStore = create<ScheduleFilterStore>((set) => ({
       const newDate = new Date(state.currentWeek)
       const daysToMove = direction === 'next' ? 7 : -7
       newDate.setDate(newDate.getDate() + daysToMove)
-      return { currentWeek: newDate }
+      return { currentWeek: getWeekStart(newDate) }
     })
   },
 
   goToToday: () => {
-    set({ currentWeek: new Date() })
+    set({ currentWeek: getWeekStart(new Date()) })
   },
 }))
