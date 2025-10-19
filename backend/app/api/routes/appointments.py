@@ -112,7 +112,7 @@ async def book_appointment(
     if existing_appointment:
         raise ConflictException("Slot already has an appointment")
     
-    # Create appointment
+    # Create appointment (auto-confirmed for parents)
     appointment_create = AppointmentCreate(
         parent_id=db_parent.id,
         teacher_id=db_slot.teacher_id,
@@ -122,6 +122,11 @@ async def book_appointment(
     )
     
     db_appointment = appointment.create(db, obj_in=appointment_create)
+    
+    # Auto-confirm appointment for parent bookings
+    db_appointment.status = AppointmentStatus.CONFIRMED
+    db.commit()
+    db.refresh(db_appointment)
     
     # Mark slot as booked
     slot.mark_as_booked(db, slot_id=booking_request.slot_id)

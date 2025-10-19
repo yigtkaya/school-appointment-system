@@ -127,8 +127,8 @@ def send_appointment_confirmation(appointment_id: str):
                 "user_id": parent.user_id,
                 "appointment_id": appointment_id,
                 "type": NotificationType.EMAIL,
-                "subject": "Appointment Confirmed",
-                "message": f"Your appointment with {teacher.user.full_name} is confirmed for {slot.start_time.strftime('%A, %B %d at %I:%M %p')}",
+                "subject": "Appointment Booked & Confirmed",
+                "message": f"Your appointment with {teacher.user.full_name} has been booked and confirmed for {slot.start_time.strftime('%A, %B %d at %I:%M %p')}",
                 "status": NotificationStatus.PENDING
             }
         )
@@ -139,8 +139,8 @@ def send_appointment_confirmation(appointment_id: str):
                 "user_id": teacher.user_id,
                 "appointment_id": appointment_id,
                 "type": NotificationType.EMAIL,
-                "subject": "New Appointment Booked",
-                "message": f"New appointment with {parent.user.full_name} scheduled for {slot.start_time.strftime('%A, %B %d at %I:%M %p')}",
+                "subject": "New Appointment - Auto-Confirmed",
+                "message": f"New appointment with {parent.user.full_name} has been automatically confirmed for {slot.start_time.strftime('%A, %B %d at %I:%M %p')}",
                 "status": NotificationStatus.PENDING
             }
         )
@@ -153,9 +153,9 @@ def send_appointment_confirmation(appointment_id: str):
         <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-                    <h2 style="color: #2563eb;">Appointment Confirmed ✓</h2>
+                    <h2 style="color: #2563eb;">Appointment Booked & Confirmed ✓</h2>
                     <p>Dear {parent.user.full_name},</p>
-                    <p>Your appointment has been successfully confirmed with the following details:</p>
+                    <p>Your appointment has been successfully booked and automatically confirmed with the following details:</p>
                     <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
                         <p><strong>Teacher:</strong> {teacher.user.full_name}</p>
                         <p><strong>Subject:</strong> {teacher.subject}</p>
@@ -174,7 +174,7 @@ def send_appointment_confirmation(appointment_id: str):
 
         send_email_async.delay(
             recipient_email=parent.user.email,
-            subject="Appointment Confirmed",
+            subject="Appointment Booked & Confirmed",
             body=parent_notification.message,
             html_body=parent_html,
             notification_id=str(parent_notification.id)
@@ -185,9 +185,9 @@ def send_appointment_confirmation(appointment_id: str):
         <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-                    <h2 style="color: #2563eb;">New Appointment Scheduled 📅</h2>
+                    <h2 style="color: #2563eb;">New Appointment - Auto-Confirmed 📅</h2>
                     <p>Dear {teacher.user.full_name},</p>
-                    <p>A new appointment has been scheduled:</p>
+                    <p>A new appointment has been booked and automatically confirmed:</p>
                     <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
                         <p><strong>Parent:</strong> {parent.user.full_name}</p>
                         <p><strong>Student:</strong> {parent.student_name}</p>
@@ -203,7 +203,7 @@ def send_appointment_confirmation(appointment_id: str):
 
         send_email_async.delay(
             recipient_email=teacher.user.email,
-            subject="New Appointment Booked",
+            subject="New Appointment - Auto-Confirmed",
             body=teacher_notification.message,
             html_body=teacher_html,
             notification_id=str(teacher_notification.id)
