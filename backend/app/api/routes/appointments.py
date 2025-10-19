@@ -238,6 +238,89 @@ async def update_appointment_status(
     return appointment.get_with_relations(db, appointment_id=updated_appointment.id)
 
 
+@router.put("/{appointment_id}/confirm", response_model=AppointmentWithRelations)
+async def confirm_appointment_endpoint(
+    appointment_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_teacher_or_admin),
+) -> AppointmentWithRelations:
+    """Confirm a pending appointment (teacher/admin only)."""
+    
+    # Get existing appointment
+    db_appointment = appointment.get(db, id=appointment_id)
+    if not db_appointment:
+        raise ResourceNotFoundException("Appointment not found")
+    
+    # Check if teacher is authorized (only for their own appointments)
+    if current_user.role == "teacher":
+        db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
+        if not db_teacher or db_appointment.teacher_id != db_teacher.id:
+            raise HTTPException(status_code=403, detail="Not authorized to confirm this appointment")
+    
+    # Check if appointment can be confirmed
+    if db_appointment.status != AppointmentStatus.PENDING:
+        raise BadRequestException(f"Cannot confirm appointment with status: {db_appointment.status}")
+    
+    # Confirm the appointment
+    updated_appointment = appointment.confirm_appointment(db, appointment_id)
+    if not updated_appointment:
+        raise HTTPException(status_code=500, detail="Failed to confirm appointment")
+
+    # Send confirmation notifications asynchronously via Celery
+    try:
+        send_appointment_confirmation.delay(str(appointment_id))
+    except Exception as e:
+        # Log error but don't fail the confirmation
+        print(f"Failed to queue confirmation notifications: {str(e)}")
+
+    return appointment.get_with_relations(db, appointment_id=updated_appointment.id)
+
+
+@router.put("/{appointment_id}/reject", response_model=AppointmentWithRelations)
+async def reject_appointment(
+    appointment_id: str,
+    rejection_reason: str = Query(..., description="Reason for rejecting the appointment"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_teacher_or_admin),
+) -> AppointmentWithRelations:
+    """Reject a pending appointment (teacher/admin only)."""
+    
+    # Get existing appointment
+    db_appointment = appointment.get(db, id=appointment_id)
+    if not db_appointment:
+        raise ResourceNotFoundException("Appointment not found")
+    
+    # Check if teacher is authorized (only for their own appointments)
+    if current_user.role == "teacher":
+        db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
+        if not db_teacher or db_appointment.teacher_id != db_teacher.id:
+            raise HTTPException(status_code=403, detail="Not authorized to reject this appointment")
+    
+    # Check if appointment can be rejected
+    if db_appointment.status != AppointmentStatus.PENDING:
+        raise BadRequestException(f"Cannot reject appointment with status: {db_appointment.status}")
+    
+    # Update appointment with rejection reason and cancel it
+    update_data = AppointmentUpdate(
+        notes=f"REJECTED: {rejection_reason}" + (f" | Original notes: {db_appointment.notes}" if db_appointment.notes else "")
+    )
+    appointment.update(db, db_obj=db_appointment, obj_in=update_data)
+    
+    # Cancel the appointment
+    updated_appointment = appointment.cancel_appointment(db, appointment_id)
+    if not updated_appointment:
+        raise HTTPException(status_code=500, detail="Failed to reject appointment")
+
+    # Send rejection notifications asynchronously via Celery
+    try:
+        send_appointment_cancellation.delay(str(appointment_id), "teacher_rejection")
+    except Exception as e:
+        # Log error but don't fail the rejection
+        print(f"Failed to queue rejection notifications: {str(e)}")
+
+    return appointment.get_with_relations(db, appointment_id=updated_appointment.id)
+
+
 @router.delete("/{appointment_id}")
 async def cancel_appointment(
     appointment_id: str,
@@ -294,14 +377,35 @@ async def get_parent_appointments(
 ) -> ParentAppointmentsResponse:
     """Get all appointments for a specific parent."""
     
-    # Check authorization
+    # Check authorization and resolve parent_id
+    actual_parent_id = parent_id
     if current_user.role == "parent":
         db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if not db_parent or db_parent.id != parent_id:
+        if not db_parent:
+            raise HTTPException(status_code=403, detail="Parent profile not found")
+        
+        # Allow access if parent_id matches either the parent profile ID or the user ID
+        if db_parent.id != parent_id and current_user.id != parent_id:
             raise HTTPException(status_code=403, detail="Not authorized to view these appointments")
+        
+        # Use the actual parent profile ID for database queries
+        actual_parent_id = db_parent.id
+    elif current_user.role == "admin":
+        # Admin can access any parent's appointments, but need to validate parent_id exists
+        # Check if parent_id is a user_id, if so convert to parent profile ID
+        db_parent_by_user = parent.get_by_user_id(db, user_id=parent_id)
+        if db_parent_by_user:
+            actual_parent_id = db_parent_by_user.id
+        else:
+            # Assume it's already a parent profile ID, validate it exists
+            db_parent = parent.get(db, id=parent_id)
+            if not db_parent:
+                raise ResourceNotFoundException("Parent not found")
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized to view parent appointments")
     
     # Get all appointments for the parent
-    appointments_list = appointment.get_by_parent(db, parent_id=parent_id)
+    appointments_list = appointment.get_by_parent(db, parent_id=actual_parent_id)
     
     # Calculate summary
     summary = AppointmentSummary(
@@ -314,7 +418,7 @@ async def get_parent_appointments(
     )
     
     return ParentAppointmentsResponse(
-        parent_id=parent_id,
+        parent_id=actual_parent_id,
         appointments=appointments_list,
         summary=summary
     )
@@ -325,24 +429,59 @@ async def get_teacher_appointments(
     teacher_id: str,
     start_date: Optional[date] = Query(None, description="Filter from start date"),
     end_date: Optional[date] = Query(None, description="Filter to end date"),
+    status: Optional[AppointmentStatus] = Query(None, description="Filter by appointment status"),
+    pending_only: bool = Query(False, description="Return only pending appointments"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> TeacherScheduleResponse:
     """Get all appointments for a specific teacher."""
     
-    # Check authorization
+    # Check authorization and resolve teacher_id
+    actual_teacher_id = teacher_id
     if current_user.role == "teacher":
         db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
-        if not db_teacher or db_teacher.id != teacher_id:
+        if not db_teacher:
+            raise HTTPException(status_code=403, detail="Teacher profile not found")
+        
+        # Allow access if teacher_id matches either the teacher profile ID or the user ID
+        if db_teacher.id != teacher_id and current_user.id != teacher_id:
             raise HTTPException(status_code=403, detail="Not authorized to view these appointments")
+        
+        # Use the actual teacher profile ID for database queries
+        actual_teacher_id = db_teacher.id
+    elif current_user.role == "admin":
+        # Admin can access any teacher's appointments, but need to validate teacher_id exists
+        # Check if teacher_id is a user_id, if so convert to teacher profile ID
+        db_teacher_by_user = teacher.get_by_user_id(db, user_id=teacher_id)
+        if db_teacher_by_user:
+            actual_teacher_id = db_teacher_by_user.id
+        else:
+            # Assume it's already a teacher profile ID, validate it exists
+            db_teacher = teacher.get(db, id=teacher_id)
+            if not db_teacher:
+                raise ResourceNotFoundException("Teacher not found")
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized to view teacher appointments")
     
-    # Get appointments
-    if start_date and end_date:
+    # Get appointments with filtering
+    if pending_only:
+        # Get only pending appointments for teacher approval
+        appointments_list = appointment.get_by_teacher_and_status(
+            db, teacher_id=actual_teacher_id, status=AppointmentStatus.PENDING
+        )
+    elif status:
+        # Filter by specific status
+        appointments_list = appointment.get_by_teacher_and_status(
+            db, teacher_id=actual_teacher_id, status=status
+        )
+    elif start_date and end_date:
+        # Filter by date range
         appointments_list = appointment.get_by_date_range(
-            db, start_date=start_date, end_date=end_date, teacher_id=teacher_id
+            db, start_date=start_date, end_date=end_date, teacher_id=actual_teacher_id
         )
     else:
-        appointments_list = appointment.get_by_teacher(db, teacher_id=teacher_id)
+        # Get all appointments for teacher
+        appointments_list = appointment.get_by_teacher(db, teacher_id=actual_teacher_id)
     
     # Calculate summary
     summary = AppointmentSummary(
@@ -355,7 +494,7 @@ async def get_teacher_appointments(
     )
     
     return TeacherScheduleResponse(
-        teacher_id=teacher_id,
+        teacher_id=actual_teacher_id,
         date_range={"start": start_date, "end": end_date} if start_date and end_date else {},
         appointments=appointments_list,
         summary=summary

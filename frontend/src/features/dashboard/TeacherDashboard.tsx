@@ -1,275 +1,95 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { appointmentsAPI, slotsAPI, calendarAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { formatDate, formatTime } from '@/lib/day-time-utils'
-import type { AvailableSlot } from '@/types/api'
+import { useTeacherAppointments, useTeacherPendingAppointments, useTeacherTodaysAppointments } from '@/hooks/appointments'
+import { StatsCards } from './components/StatsCards'
+import { PendingAppointments } from './components/PendingAppointments'
+import { TodaysSchedule } from './components/TodaysSchedule'
+import { AllAppointmentsList } from './components/AllAppointmentsList'
+import { CalendarView } from './components/CalendarView'
+import { QuickActionsCard } from './components/QuickActionsCard'
+import { useAppointmentActions } from './hooks/useAppointmentActions'
+import { getWeekStart } from './utils/calendarUtils'
 
-type TabOption = 'overview' | 'schedule' | 'appointments' | 'slots'
+type ViewMode = 'dashboard' | 'all-appointments' | 'calendar'
 
 export function TeacherDashboard() {
   const { user } = useAuthStore()
-  const [selectedTab, setSelectedTab] = useState<TabOption>('overview')
-  
-  const { data: teacherAppointments } = useQuery({
-    queryKey: ['teacher-appointments', user?.id],
-    queryFn: () => appointmentsAPI.getTeacherAppointments(user?.id || ''),
-    enabled: !!user?.id,
-  })
+  const [currentView, setCurrentView] = useState<ViewMode>('dashboard')
+  const { handleConfirm, handleReject, confirmMutation, rejectMutation } = useAppointmentActions()
+  const [currentWeek, setCurrentWeek] = useState(getWeekStart(new Date()))
 
-  const { data: teacherSlots } = useQuery({
-    queryKey: ['teacher-slots', user?.id],
-    queryFn: () => slotsAPI.getAll({ teacher_id: user?.id }),
-    enabled: !!user?.id,
-  })
+  // Get pending appointments (top priority)
+  const { data: pendingAppointments } = useTeacherPendingAppointments(user?.id || '')
 
-  const { data: weeklySchedule } = useQuery({
-    queryKey: ['weekly-schedule', user?.id],
-    queryFn: () => calendarAPI.getEnhancedWeekly(user?.id || ''),
-    enabled: !!user?.id,
-  })
+  // Get all appointments
+  const { data: allAppointments } = useTeacherAppointments(user?.id || '')
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800'
-      case 'completed':
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
+  // Get today's appointments
+  const { data: todaysAppointments } = useTeacherTodaysAppointments(user?.id || '')
 
-  const todaysAppointments = teacherAppointments?.filter(apt => {
-    const today = new Date().toISOString().split('T')[0]
-    return apt.slot?.week_start_date === today
-  }) || []
-
-  const renderOverview = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{teacherAppointments?.length || 0}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Available Slots</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {teacherSlots?.slots?.filter((slot: AvailableSlot) => !slot.is_booked).length || 0}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{todaysAppointments.length}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Utilization Rate</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {weeklySchedule?.statistics?.utilization_rate ? 
-              `${Math.round(weeklySchedule.statistics.utilization_rate * 100)}%` : '0%'}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>Upcoming Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {teacherAppointments?.slice(0, 5).map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <div className="font-medium">{appointment.parent?.student_name}</div>
-                  <div className="text-sm text-gray-600">
-                    Class: {appointment.parent?.student_class}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
-                  </div>
-                  <div className="text-sm text-gray-500">Mode: {appointment.meeting_mode}</div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getStatusBadgeColor(appointment.status)}>
-                    {appointment.status}
-                  </Badge>
-                  <Button variant="outline" size="sm">View</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+  const renderDashboard = () => (
+    <div className="space-y-8">
+      <StatsCards
+        pending={pendingAppointments?.length || 0}
+        today={todaysAppointments?.length || 0}
+        total={allAppointments?.length || 0}
+        confirmed={allAppointments?.filter((apt) => apt.status === 'confirmed').length || 0}
+      />
+      <PendingAppointments
+        appointments={pendingAppointments}
+        onConfirm={handleConfirm}
+        onReject={handleReject}
+        isConfirming={confirmMutation.isPending}
+        isRejecting={rejectMutation.isPending}
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <TodaysSchedule appointments={todaysAppointments} />
+        <QuickActionsCard
+          onViewCalendar={() => setCurrentView('calendar')}
+          onViewAllAppointments={() => setCurrentView('all-appointments')}
+        />
+      </div>
     </div>
-  )
-
-  const renderSchedule = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Weekly Schedule</CardTitle>
-        <div className="text-sm text-gray-600">
-          Week: {weeklySchedule?.week_start} to {weeklySchedule?.week_end}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {weeklySchedule?.schedule && (
-          <div className="grid grid-cols-7 gap-4">
-            {Object.entries(weeklySchedule.schedule).map(([day, slots]) => (
-              <div key={day} className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">{day}</h3>
-                <div className="space-y-2">
-                  {slots.map((slot) => (
-                    <div 
-                      key={slot.id} 
-                      className={`p-2 rounded text-xs ${
-                        slot.is_booked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                      {slot.is_booked && <div className="mt-1">Booked</div>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-
-  const renderAppointments = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Appointments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {teacherAppointments?.map((appointment) => (
-            <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <div className="font-medium">{appointment.parent?.student_name}</div>
-                <div className="text-sm text-gray-600">
-                  Parent: {appointment.parent?.user?.full_name}
-                </div>
-                <div className="text-sm text-gray-600">
-                  Class: {appointment.parent?.student_class}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
-                </div>
-                <div className="text-sm text-gray-500">Mode: {appointment.meeting_mode}</div>
-                {appointment.notes && (
-                  <div className="text-sm text-gray-500 mt-1">Notes: {appointment.notes}</div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={getStatusBadgeColor(appointment.status)}>
-                  {appointment.status}
-                </Badge>
-                <Button variant="outline" size="sm">Manage</Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderSlots = () => (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Time Slots</CardTitle>
-          <Button size="sm">Add Slot</Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {teacherSlots?.slots?.map((slot: AvailableSlot) => (
-            <div key={slot.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <div className="font-medium">
-                  Day {slot.day_of_week} - {formatTime(slot.start_time)} to {formatTime(slot.end_time)}
-                </div>
-                <div className="text-sm text-gray-600">
-                  Week starting: {formatDate(slot.week_start_date)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Status: {slot.is_booked ? 'Booked' : 'Available'}
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={slot.is_booked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                  {slot.is_booked ? 'Booked' : 'Available'}
-                </Badge>
-                <Button variant="outline" size="sm">Edit</Button>
-                {!slot.is_booked && (
-                  <Button variant="destructive" size="sm">Delete</Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-          <p className="text-gray-600">Manage your schedule and appointments</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Welcome back, {user?.full_name?.split(' ')[0]}!</h1>
+            <p className="text-gray-600">
+              {pendingAppointments && pendingAppointments.length > 0
+                ? `You have ${pendingAppointments.length} appointment${pendingAppointments.length > 1 ? 's' : ''} waiting for confirmation`
+                : 'All caught up! No pending appointments to review.'}
+            </p>
+          </div>
+          {(currentView === 'all-appointments' || currentView === 'calendar') && (
+            <Button variant="outline" onClick={() => setCurrentView('dashboard')}>
+              ← Back to Dashboard
+            </Button>
+          )}
         </div>
 
-        <div className="flex space-x-4 border-b">
-          {['overview', 'schedule', 'appointments', 'slots'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSelectedTab(tab as TabOption)}
-              className={`px-4 py-2 font-medium capitalize ${
-                selectedTab === tab
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div>
-          {selectedTab === 'overview' && renderOverview()}
-          {selectedTab === 'schedule' && renderSchedule()}
-          {selectedTab === 'appointments' && renderAppointments()}
-          {selectedTab === 'slots' && renderSlots()}
-        </div>
+        {currentView === 'dashboard' && renderDashboard()}
+        {currentView === 'all-appointments' && (
+          <AllAppointmentsList
+            appointments={allAppointments}
+            onConfirm={handleConfirm}
+            onReject={handleReject}
+          />
+        )}
+        {currentView === 'calendar' && (
+          <CalendarView
+            appointments={allAppointments}
+            currentWeek={currentWeek}
+            onWeekChange={setCurrentWeek}
+            onConfirm={handleConfirm}
+            onReject={handleReject}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

@@ -67,6 +67,33 @@ export const useTeacherAppointments = (teacherId: string) => {
   })
 }
 
+// Hook to fetch pending appointments for a teacher (with real-time updates)
+export const useTeacherPendingAppointments = (teacherId: string) => {
+  return useQuery({
+    queryKey: [...appointmentsKeys.teacherAppointments(teacherId), 'pending'] as const,
+    queryFn: () => appointmentsAPI.getTeacherPendingAppointments(teacherId),
+    enabled: !!teacherId,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    staleTime: 10 * 1000, // 10 seconds
+  })
+}
+
+// Hook to fetch today's appointments for a teacher
+export const useTeacherTodaysAppointments = (teacherId: string) => {
+  return useQuery({
+    queryKey: [...appointmentsKeys.teacherAppointments(teacherId), 'today'] as const,
+    queryFn: () => {
+      const today = new Date().toISOString().split('T')[0]
+      return appointmentsAPI.getTeacherAppointments(teacherId, {
+        start_date: today,
+        end_date: today,
+      })
+    },
+    enabled: !!teacherId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  })
+}
+
 // Hook to update appointment status
 export const useUpdateAppointmentStatus = () => {
   const queryClient = useQueryClient()
@@ -101,6 +128,39 @@ export const useCancelAppointment = () => {
     },
     onError: () => {
       toast.error('Error cancelling appointment')
+    },
+  })
+}
+
+// Hook to confirm an appointment (teacher action)
+export const useConfirmAppointment = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (appointmentId: string) => appointmentsAPI.confirm(appointmentId),
+    onSuccess: () => {
+      toast.success('Appointment confirmed successfully!')
+      queryClient.invalidateQueries({ queryKey: appointmentsKeys.all })
+    },
+    onError: () => {
+      toast.error('Failed to confirm appointment')
+    },
+  })
+}
+
+// Hook to reject an appointment (teacher action)
+export const useRejectAppointment = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ appointmentId, reason }: { appointmentId: string; reason: string }) =>
+      appointmentsAPI.reject(appointmentId, reason),
+    onSuccess: () => {
+      toast.success('Appointment rejected')
+      queryClient.invalidateQueries({ queryKey: appointmentsKeys.all })
+    },
+    onError: () => {
+      toast.error('Failed to reject appointment')
     },
   })
 }

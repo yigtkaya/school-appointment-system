@@ -120,6 +120,33 @@ class CRUDAppointment(CRUDBase[Appointment, AppointmentCreate, AppointmentUpdate
             .all()
         )
     
+    def get_by_teacher_and_status(
+        self, 
+        db: Session, 
+        teacher_id: str,
+        status: AppointmentStatus,
+        skip: int = 0, 
+        limit: int = 100
+    ) -> List[Appointment]:
+        """Get appointments for a specific teacher filtered by status."""
+        return (
+            db.query(self.model)
+            .options(
+                joinedload(self.model.parent).joinedload(Parent.user),
+                joinedload(self.model.teacher).joinedload(Teacher.user),
+                joinedload(self.model.slot).joinedload(AvailableSlot.teacher).joinedload(Teacher.user)
+            )
+            .filter(
+                and_(
+                    self.model.teacher_id == teacher_id,
+                    self.model.status == status
+                )
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    
     def get_by_slot(self, db: Session, slot_id: str) -> Optional[Appointment]:
         """Get appointment by slot ID."""
         return (

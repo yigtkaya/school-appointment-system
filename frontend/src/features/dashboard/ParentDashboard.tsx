@@ -170,9 +170,21 @@ export function ParentDashboard() {
                     <Badge className={getStatusBadgeColor(appointment.status)}>
                       {appointment.status}
                     </Badge>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
+                    {appointment.status === 'pending' && (
+                      <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                        Awaiting teacher confirmation
+                      </div>
+                    )}
+                    {appointment.status === 'pending' && (
+                      <Button variant="destructive" size="sm">
+                        Cancel
+                      </Button>
+                    )}
+                    {appointment.status === 'confirmed' && (
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

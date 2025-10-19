@@ -38,6 +38,14 @@ export const appointmentsAPI = {
     return apiClient.put<Appointment>(`/appointments/${id}/status`, { status })
   },
 
+  async confirm(id: string): Promise<Appointment> {
+    return apiClient.put<Appointment>(`/appointments/${id}/confirm`)
+  },
+
+  async reject(id: string, reason: string): Promise<Appointment> {
+    return apiClient.put<Appointment>(`/appointments/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`)
+  },
+
   async cancel(id: string): Promise<void> {
     return apiClient.delete(`/appointments/${id}`)
   },
@@ -55,15 +63,26 @@ export const appointmentsAPI = {
     return response.appointments
   },
 
-  async getTeacherAppointments(teacherId: string): Promise<Appointment[]> {
+  async getTeacherAppointments(teacherId: string, params?: {
+    status?: string;
+    pending_only?: boolean;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<Appointment[]> {
     const response = await apiClient.get<{
       appointments: Appointment[];
       summary: {
         total: number;
-        today: number;
-        this_week: number;
+        pending_appointments: number;
+        confirmed_appointments: number;
+        completed_appointments: number;
+        cancelled_appointments: number;
       };
-    }>(`/appointments/teacher/${teacherId}/appointments`)
+    }>(`/appointments/teacher/${teacherId}/appointments`, params)
     return response.appointments
+  },
+
+  async getTeacherPendingAppointments(teacherId: string): Promise<Appointment[]> {
+    return this.getTeacherAppointments(teacherId, { pending_only: true })
   }
 }
