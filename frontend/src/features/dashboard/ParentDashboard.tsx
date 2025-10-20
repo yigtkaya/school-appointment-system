@@ -55,7 +55,7 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
   const renderHomeView = () => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
       <div className="w-full max-w-4xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Book New Appointment Card */}
           <Card 
             className="group hover:shadow-2xl transition-all duration-500 cursor-pointer border-2 border-dashed border-blue-200 hover:border-blue-400 hover:scale-105 animate-in fade-in slide-in-from-left-8 duration-700"
@@ -78,7 +78,7 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
           </Card>
 
           {/* View Appointments Card */}
-          <Card 
+          {/* <Card 
             className="group hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-105 animate-in fade-in slide-in-from-right-8 duration-700"
             onClick={() => setCurrentView('appointments')}
           >
@@ -102,7 +102,7 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
                 <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

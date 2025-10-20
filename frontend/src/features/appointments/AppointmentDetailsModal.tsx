@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,9 +47,11 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
   })
 
   // Update form when appointment data loads
-  if (appointment?.notes && !isEditingNotes) {
-    reset({ notes: appointment.notes })
-  }
+  useEffect(() => {
+    if (appointment && !isEditingNotes) {
+      reset({ notes: appointment.notes || '' })
+    }
+  }, [appointment, isEditingNotes, reset])
 
   const canEditNotes = user?.role === 'admin' || user?.role === 'teacher'
 
@@ -132,6 +134,35 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
             </Badge>
           </div>
 
+          {/* Child Information - Show First */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-gray-700 mb-3 font-semibold">Student Information</div>
+                
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 text-gray-500 mt-1" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-500">Student Name</div>
+                    <div className="text-lg font-semibold">{appointment.child_name}</div>
+                    <div className="text-sm text-gray-600">
+                      Year {appointment.child_year} - Class {appointment.child_class}
+                    </div>
+                  </div>
+                </div>
+                {appointment.parent_contact && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-gray-500 mt-1" />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-500">Parent Contact</div>
+                      <div className="text-lg font-semibold">{appointment.parent_contact}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Teacher Information */}
           <Card>
             <CardContent className="pt-6">
@@ -145,33 +176,6 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                     <div className="text-sm text-gray-500">Branch: {appointment.teacher.branch}</div>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Child Information */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <User className="w-5 h-5 text-gray-500 mt-1" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500">Student</div>
-                    <div className="text-lg font-semibold">{appointment.child_name}</div>
-                    <div className="text-sm text-gray-600">
-                      Year {appointment.child_year} - Class {appointment.child_class}
-                    </div>
-                  </div>
-                </div>
-                {appointment.parent_contact && (
-                  <div className="flex items-start gap-3">
-                    <Phone className="w-5 h-5 text-gray-500 mt-1" />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-500">Parent Contact</div>
-                      <div className="text-sm">{appointment.parent_contact}</div>
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

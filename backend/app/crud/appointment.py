@@ -89,8 +89,8 @@ class CRUDAppointment(CRUDBase[Appointment, AppointmentCreate, AppointmentUpdate
             joinedload(self.model.slot)
         ).join(AvailableSlot).filter(
             and_(
-                AvailableSlot.start_time >= start_date,
-                AvailableSlot.start_time <= end_date
+                AvailableSlot.week_start_date >= start_date,
+                AvailableSlot.week_start_date <= end_date
             )
         )
         

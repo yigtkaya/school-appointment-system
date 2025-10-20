@@ -361,36 +361,21 @@ async def get_teacher_appointments(
     status: Optional[AppointmentStatus] = Query(None, description="Filter by appointment status"),
     pending_only: bool = Query(False, description="Return only pending appointments"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> TeacherScheduleResponse:
-    """Get all appointments for a specific teacher."""
+    """Get all appointments for a specific teacher (public access for parents to view schedules)."""
     
-    # Check authorization and resolve teacher_id
+    # Resolve teacher_id (could be user_id or teacher profile id)
     actual_teacher_id = teacher_id
-    if current_user.role == "teacher":
-        db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
-        if not db_teacher:
-            raise HTTPException(status_code=403, detail="Teacher profile not found")
-        
-        # Allow access if teacher_id matches either the teacher profile ID or the user ID
-        if db_teacher.id != teacher_id and current_user.id != teacher_id:
-            raise HTTPException(status_code=403, detail="Not authorized to view these appointments")
-        
-        # Use the actual teacher profile ID for database queries
-        actual_teacher_id = db_teacher.id
-    elif current_user.role == "admin":
-        # Admin can access any teacher's appointments, but need to validate teacher_id exists
-        # Check if teacher_id is a user_id, if so convert to teacher profile ID
-        db_teacher_by_user = teacher.get_by_user_id(db, user_id=teacher_id)
-        if db_teacher_by_user:
-            actual_teacher_id = db_teacher_by_user.id
-        else:
-            # Assume it's already a teacher profile ID, validate it exists
-            db_teacher = teacher.get(db, id=teacher_id)
-            if not db_teacher:
-                raise ResourceNotFoundException("Teacher not found")
+    
+    # Check if teacher_id is a user_id, if so convert to teacher profile ID
+    db_teacher_by_user = teacher.get_by_user_id(db, user_id=teacher_id)
+    if db_teacher_by_user:
+        actual_teacher_id = db_teacher_by_user.id
     else:
-        raise HTTPException(status_code=403, detail="Not authorized to view teacher appointments")
+        # Assume it's already a teacher profile ID, validate it exists
+        db_teacher = teacher.get(db, id=teacher_id)
+        if not db_teacher:
+            raise ResourceNotFoundException("Teacher not found")
     
     # Get appointments with filtering
     if pending_only:

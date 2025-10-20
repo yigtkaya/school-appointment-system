@@ -3,8 +3,14 @@ import type { Teacher } from '@/types/api'
 import { useSlots } from '@/hooks'
 import { useAuthStore } from '@/stores/auth'
 import { useTeacherByUserId } from '@/hooks/teachers'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
 
-export function TeacherSlotManagement() {
+interface TeacherSlotManagementProps {
+  onBackToDashboard?: () => void
+}
+
+export function TeacherSlotManagement({ onBackToDashboard }: TeacherSlotManagementProps) {
 
   const { user } = useAuthStore()
 
@@ -49,6 +55,16 @@ export function TeacherSlotManagement() {
 
   return (
     <div className="space-y-6">
+      {onBackToDashboard && (
+        <Button
+          variant="ghost"
+          onClick={onBackToDashboard}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      )}
       <WeeklyScheduleView
         selectedTeacher={teacher.id}
         onTeacherChange={() => { }}
