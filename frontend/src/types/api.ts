@@ -145,13 +145,20 @@ export interface SlotListResponse {
 // Appointment Types
 export interface Appointment {
   id: string;
-  parent_id: string;
+  parent_id: string | null;  // Optional for anonymous bookings
   teacher_id: string;
   slot_id: string;
   meeting_mode: MeetingMode;
   status: AppointmentStatus;
   notes: string | null;
-  parent: Parent;
+
+  // Child information for anonymous booking
+  child_name: string;
+  child_year: string;  // 1-8
+  child_class: string;  // A-E
+  parent_contact: string | null;
+
+  parent: Parent | null;  // Optional for anonymous bookings
   teacher: Teacher;
   slot: AvailableSlot;
   created_at: string;
@@ -159,11 +166,30 @@ export interface Appointment {
 }
 
 export interface AppointmentCreate {
-  parent_id: string;
+  parent_id?: string | null;
   teacher_id: string;
   slot_id: string;
   meeting_mode: MeetingMode;
   notes?: string;
+
+  // Child information (required for anonymous booking)
+  child_name: string;
+  child_year: string;
+  child_class: string;
+  parent_contact?: string;
+}
+
+// Booking request (for anonymous booking flow)
+export interface AppointmentBookingRequest {
+  slot_id: string;
+  meeting_mode: MeetingMode;
+  notes?: string;
+
+  // Child information (required)
+  child_name: string;
+  child_year: string;  // 1-8
+  child_class: string;  // A-E
+  parent_contact?: string;
 }
 
 // API Error Types

@@ -11,14 +11,21 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react'
-import type { AvailableSlot, MeetingMode, Teacher, Parent } from '@/types/api'
+import type { AvailableSlot, MeetingMode, Teacher } from '@/types/api'
+
+interface ChildInfo {
+  child_name: string
+  child_year: string
+  child_class: string
+  parent_contact?: string
+}
 
 interface BookingConfirmationProps {
   teacher: Teacher
   slot: AvailableSlot
   meetingMode: MeetingMode
   notes?: string
-  parent?: Parent
+  childInfo?: ChildInfo
   onConfirm: () => void
   onEdit: () => void
   isLoading?: boolean
@@ -34,7 +41,7 @@ export function BookingConfirmation({
   slot,
   meetingMode,
   notes,
-  parent,
+  childInfo,
   onConfirm,
   onEdit,
   isLoading = false,
@@ -119,7 +126,7 @@ export function BookingConfirmation({
           </div>
 
           {/* Student Information */}
-          {parent && (
+          {childInfo && (
             <div className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <User className="h-4 w-4 text-gray-600" />
@@ -128,20 +135,16 @@ export function BookingConfirmation({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Student Name:</span>
-                  <p className="font-medium text-gray-900">{parent.student_name}</p>
+                  <p className="font-medium text-gray-900">{childInfo.child_name}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Class:</span>
-                  <p className="font-medium text-gray-900">{parent.student_class}</p>
+                  <span className="text-gray-600">Year & Class:</span>
+                  <p className="font-medium text-gray-900">Year {childInfo.child_year}, Class {childInfo.child_class}</p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Parent:</span>
-                  <p className="font-medium text-gray-900">{parent.user.full_name}</p>
-                </div>
-                {parent.phone_number && (
-                  <div>
-                    <span className="text-gray-600">Phone:</span>
-                    <p className="font-medium text-gray-900">{parent.phone_number}</p>
+                {childInfo.parent_contact && (
+                  <div className="col-span-2">
+                    <span className="text-gray-600">Contact:</span>
+                    <p className="font-medium text-gray-900">{childInfo.parent_contact}</p>
                   </div>
                 )}
               </div>

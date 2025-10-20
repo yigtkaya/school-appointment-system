@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -18,20 +18,24 @@ import { MeetingModeSelector } from './MeetingModeSelector'
 import { BookingConfirmation } from './BookingConfirmation'
 import { TeacherSelector } from './TeacherSelector'
 import { NotesInput } from './NotesInput'
+import { ChildInfoForm } from './ChildInfoForm'
 import { appointmentsAPI } from '@/api'
-import { useAuthStore } from '@/stores/auth'
 import { useAppointmentBookingStore } from '@/stores/appointmentBooking'
-import { useTeachers, useTeacherById, useParentByUserId } from '@/hooks'
-import type { 
-  AvailableSlot, 
-  AppointmentCreate 
+import { useTeachers, useTeacherById } from '@/hooks'
+import type {
+  AvailableSlot,
+  AppointmentBookingRequest
 } from '@/types/api'
 
-const notesSchema = z.object({
+const bookingFormSchema = z.object({
+  child_name: z.string().min(1, 'Student name is required').max(200, 'Name is too long'),
+  child_year: z.string().regex(/^[1-8]$/, 'Please select a valid year (1-8)'),
+  child_class: z.string().regex(/^[A-E]$/, 'Please select a valid class (A-E)'),
+  parent_contact: z.string().max(200, 'Contact is too long').optional(),
   notes: z.string().max(500, 'Notes must be less than 500 characters').optional()
 })
 
-type NotesFormData = z.infer<typeof notesSchema>
+type BookingFormData = z.infer<typeof bookingFormSchema>
 
 interface AppointmentBookingModalProps {
   isOpen: boolean
@@ -40,9 +44,10 @@ interface AppointmentBookingModalProps {
   preselectedSlot?: AvailableSlot
 }
 
-type BookingStep = 'teacher' | 'slot' | 'mode' | 'notes' | 'confirm'
+type BookingStep = 'child_info' | 'teacher' | 'slot' | 'mode' | 'notes' | 'confirm'
 
 const STEP_TITLES = {
+  child_info: 'Student Information',
   teacher: 'Select Teacher',
   slot: 'Choose Time Slot',
   mode: 'Meeting Format',
@@ -51,20 +56,18 @@ const STEP_TITLES = {
 }
 
 const STEP_PROGRESS = {
-  teacher: 20,
-  slot: 40,
-  mode: 60,
-  notes: 80,
+  child_info: 16,
+  teacher: 33,
+  slot: 50,
+  mode: 66,
+  notes: 83,
   confirm: 100
 }
 
-export function AppointmentBookingModal({ 
-  isOpen, 
-  onClose, 
-  teacherId, 
-  preselectedSlot 
-}: AppointmentBookingModalProps) {
-  const { user } = useAuthStore()
+export function AppointmentBookingModal({
+  isOpen,
+  onClose,
+  teacherId}: AppointmentBookingModalProps) {
   const {
     currentStep,
     selectedTeacher,
@@ -79,21 +82,26 @@ export function AppointmentBookingModal({
   } = useAppointmentBookingStore()
   const queryClient = useQueryClient()
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<NotesFormData>({
-    resolver: zodResolver(notesSchema),
-    defaultValues: { notes: '' }
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>({
+    resolver: zodResolver(bookingFormSchema),
+    defaultValues: {
+      child_name: '',
+      child_year: '',
+      child_class: '',
+      parent_contact: '',
+      notes: ''
+    }
   })
 
-  const notes = watch('notes')
+  const formValues = watch()
 
   // Data hooks
   const { data: teachers = [], isLoading: loadingTeachers } = useTeachers()
   const { data: teacher } = useTeacherById(teacherId || '')
-  const { data: parentProfile } = useParentByUserId(user?.id || '')
 
   // Book appointment mutation
   const bookAppointmentMutation = useMutation({
-    mutationFn: async (data: AppointmentCreate) => {
+    mutationFn: async (data: AppointmentBookingRequest) => {
       return appointmentsAPI.book(data)
     },
     onSuccess: () => {
@@ -119,20 +127,19 @@ export function AppointmentBookingModal({
   // Initialize state when modal opens
   useEffect(() => {
     if (isOpen) {
+      // Always start with child info form
+      setCurrentStep('child_info')
+      setBookingError(null)
+
+      // Pre-select teacher if provided
       if (teacherId && teacher) {
         setSelectedTeacher(teacher)
-        setCurrentStep(preselectedSlot ? 'mode' : 'slot')
-      } else if (teacherId) {
-        setCurrentStep('slot')
-      } else {
-        setCurrentStep('teacher')
       }
-      setBookingError(null)
     }
-  }, [isOpen, teacherId, teacher, preselectedSlot, setCurrentStep, setSelectedTeacher, setBookingError])
+  }, [isOpen, teacherId, teacher, setCurrentStep, setSelectedTeacher, setBookingError])
 
   const handleNext = () => {
-    const steps: BookingStep[] = ['teacher', 'slot', 'mode', 'notes', 'confirm']
+    const steps: BookingStep[] = ['child_info', 'teacher', 'slot', 'mode', 'notes', 'confirm']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1])
@@ -140,7 +147,7 @@ export function AppointmentBookingModal({
   }
 
   const handleBack = () => {
-    const steps: BookingStep[] = ['teacher', 'slot', 'mode', 'notes', 'confirm']
+    const steps: BookingStep[] = ['child_info', 'teacher', 'slot', 'mode', 'notes', 'confirm']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1])
@@ -148,17 +155,19 @@ export function AppointmentBookingModal({
   }
 
   const handleConfirmBooking = handleSubmit(async (formData) => {
-    if (!selectedTeacher || !selectedSlot || !selectedMode || !parentProfile) {
+    if (!selectedTeacher || !selectedSlot || !selectedMode) {
       toast.error('Please complete all required fields')
       return
     }
 
-    const bookingData: AppointmentCreate = {
-      parent_id: parentProfile.id,
-      teacher_id: selectedTeacher.id,
+    const bookingData: AppointmentBookingRequest = {
       slot_id: selectedSlot.id,
       meeting_mode: selectedMode,
-      notes: formData.notes || undefined
+      notes: formData.notes || undefined,
+      child_name: formData.child_name,
+      child_year: formData.child_year,
+      child_class: formData.child_class,
+      parent_contact: formData.parent_contact || undefined,
     }
 
     bookAppointmentMutation.mutate(bookingData)
@@ -166,6 +175,8 @@ export function AppointmentBookingModal({
 
   const canProceed = () => {
     switch (currentStep) {
+      case 'child_info':
+        return !!(formValues.child_name && formValues.child_year && formValues.child_class)
       case 'teacher':
         return !!selectedTeacher
       case 'slot':
@@ -183,6 +194,15 @@ export function AppointmentBookingModal({
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 'child_info':
+        return (
+          <ChildInfoForm
+            register={register}
+            errors={errors}
+            values={formValues}
+          />
+        )
+
       case 'teacher':
         return (
           <div className="space-y-4">
@@ -218,7 +238,7 @@ export function AppointmentBookingModal({
           <NotesInput
             register={register('notes')}
             error={errors.notes}
-            value={notes}
+            value={formValues.notes}
           />
         )
 
@@ -228,8 +248,13 @@ export function AppointmentBookingModal({
             teacher={selectedTeacher}
             slot={selectedSlot}
             meetingMode={selectedMode}
-            notes={notes}
-            parent={parentProfile}
+            notes={formValues.notes}
+            childInfo={{
+              child_name: formValues.child_name,
+              child_year: formValues.child_year,
+              child_class: formValues.child_class,
+              parent_contact: formValues.parent_contact
+            }}
             onConfirm={handleConfirmBooking}
             onEdit={() => setCurrentStep('notes')}
             isLoading={bookAppointmentMutation.isPending}
@@ -273,7 +298,7 @@ export function AppointmentBookingModal({
             <Button
               variant="outline"
               onClick={handleBack}
-              disabled={currentStep === 'teacher'}
+              disabled={currentStep === 'child_info'}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back

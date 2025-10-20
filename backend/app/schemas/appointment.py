@@ -12,12 +12,18 @@ from app.schemas.slot import SlotWithTeacher
 
 class AppointmentBase(BaseModel):
     """Base appointment schema."""
-    
-    parent_id: str = Field(..., description="Parent ID")
+
+    parent_id: Optional[str] = Field(None, description="Parent ID (optional for anonymous booking)")
     teacher_id: str = Field(..., description="Teacher ID")
     slot_id: str = Field(..., description="Available slot ID")
     meeting_mode: MeetingMode = Field(..., description="Meeting mode (online/face_to_face)")
     notes: Optional[str] = Field(None, max_length=1000, description="Additional notes")
+
+    # Child information for anonymous booking
+    child_name: str = Field(..., description="Child's name")
+    child_year: str = Field(..., description="Child's year (1-8)", pattern="^[1-8]$")
+    child_class: str = Field(..., description="Child's class (A-E)", pattern="^[A-E]$")
+    parent_contact: Optional[str] = Field(None, description="Parent contact information (optional)")
 
 
 class AppointmentCreate(AppointmentBase):
@@ -38,25 +44,37 @@ class AppointmentStatusUpdate(BaseModel):
     status: AppointmentStatus = Field(..., description="New appointment status")
 
 
-class AppointmentResponse(AppointmentBase):
+class AppointmentResponse(BaseModel):
     """Schema for appointment response."""
-    
+
     id: str
+    parent_id: Optional[str] = None
+    teacher_id: str
+    slot_id: str
+    meeting_mode: MeetingMode
     status: AppointmentStatus
+    notes: Optional[str] = None
+
+    # Child information
+    child_name: str
+    child_year: str
+    child_class: str
+    parent_contact: Optional[str] = None
+
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class AppointmentWithRelations(AppointmentResponse):
     """Schema for appointment response with related information."""
-    
-    parent: ParentWithUser
+
+    parent: Optional[ParentWithUser] = None  # Optional for anonymous bookings
     teacher: TeacherWithUser
     slot: SlotWithTeacher
-    
+
     class Config:
         from_attributes = True
 
@@ -71,11 +89,17 @@ class AppointmentListResponse(BaseModel):
 
 
 class AppointmentBookingRequest(BaseModel):
-    """Schema for booking an appointment."""
-    
+    """Schema for booking an appointment (anonymous, no login required)."""
+
     slot_id: str = Field(..., description="Available slot ID")
     meeting_mode: MeetingMode = Field(..., description="Meeting mode (online/face_to_face)")
     notes: Optional[str] = Field(None, max_length=1000, description="Additional notes")
+
+    # Child information (required for anonymous booking)
+    child_name: str = Field(..., min_length=1, max_length=200, description="Child's name")
+    child_year: str = Field(..., description="Child's year (1-8)", pattern="^[1-8]$")
+    child_class: str = Field(..., description="Child's class (A-E)", pattern="^[A-E]$")
+    parent_contact: Optional[str] = Field(None, max_length=200, description="Parent contact (email/phone)")
 
 
 class AppointmentSummary(BaseModel):

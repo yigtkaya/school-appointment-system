@@ -90,47 +90,45 @@ async def get_appointments(
 async def book_appointment(
     booking_request: AppointmentBookingRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_parent_user),
 ) -> AppointmentWithRelations:
-    """Book an appointment (parent only)."""
-    
-    # Get parent profile
-    db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-    if not db_parent:
-        raise ResourceNotFoundException("Parent profile not found")
-    
+    """Book an appointment (anonymous, no login required)."""
+
     # Check if slot exists and is available
     db_slot = slot.get(db, id=booking_request.slot_id)
     if not db_slot:
         raise ResourceNotFoundException("Slot not found")
-    
+
     if db_slot.is_booked:
         raise ConflictException("Slot is already booked")
-    
+
     # Check if slot already has an appointment
     existing_appointment = appointment.get_by_slot(db, slot_id=booking_request.slot_id)
     if existing_appointment:
         raise ConflictException("Slot already has an appointment")
-    
-    # Create appointment (auto-confirmed for parents)
+
+    # Create appointment with child information (no parent_id needed for anonymous booking)
     appointment_create = AppointmentCreate(
-        parent_id=db_parent.id,
+        parent_id=None,  # Anonymous booking
         teacher_id=db_slot.teacher_id,
         slot_id=booking_request.slot_id,
         meeting_mode=booking_request.meeting_mode,
-        notes=booking_request.notes
+        notes=booking_request.notes,
+        child_name=booking_request.child_name,
+        child_year=booking_request.child_year,
+        child_class=booking_request.child_class,
+        parent_contact=booking_request.parent_contact,
     )
-    
+
     db_appointment = appointment.create(db, obj_in=appointment_create)
-    
-    # Auto-confirm appointment for parent bookings
+
+    # Auto-confirm appointment for anonymous bookings
     db_appointment.status = AppointmentStatus.CONFIRMED
     db.commit()
     db.refresh(db_appointment)
-    
+
     # Mark slot as booked
     slot.mark_as_booked(db, slot_id=booking_request.slot_id)
-    
+
     # Get appointment with relations
     db_appointment_with_relations = appointment.get_with_relations(db, appointment_id=db_appointment.id)
 

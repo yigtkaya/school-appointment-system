@@ -1,8 +1,9 @@
 import { apiClient } from './client'
-import type { 
-  Appointment, 
-  AppointmentCreate, 
-  AppointmentStatus 
+import type {
+  Appointment,
+  AppointmentCreate,
+  AppointmentBookingRequest,
+  AppointmentStatus
 } from '@/types/api'
 
 export const appointmentsAPI = {
@@ -26,7 +27,7 @@ export const appointmentsAPI = {
     return apiClient.get<Appointment>(`/appointments/${id}`)
   },
 
-  async book(data: AppointmentCreate): Promise<Appointment> {
+  async book(data: AppointmentBookingRequest): Promise<Appointment> {
     return apiClient.post<Appointment>('/appointments/book', data)
   },
 

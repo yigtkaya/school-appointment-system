@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { AvailableSlot, MeetingMode, Teacher } from '@/types/api'
 
-type BookingStep = 'teacher' | 'slot' | 'mode' | 'notes' | 'confirm'
+type BookingStep = 'child_info' | 'teacher' | 'slot' | 'mode' | 'notes' | 'confirm'
 
 interface AppointmentBookingState {
   // Modal state
@@ -43,12 +43,12 @@ interface AppointmentBookingActions {
 
 export type AppointmentBookingStore = AppointmentBookingState & AppointmentBookingActions
 
-const BOOKING_STEPS: BookingStep[] = ['teacher', 'slot', 'mode', 'notes', 'confirm']
+const BOOKING_STEPS: BookingStep[] = ['child_info', 'teacher', 'slot', 'mode', 'notes', 'confirm']
 
 export const useAppointmentBookingStore = create<AppointmentBookingStore>((set, get) => ({
   // Initial state
   isOpen: false,
-  currentStep: 'teacher',
+  currentStep: 'child_info',
   selectedTeacher: null,
   selectedSlot: null,
   selectedMode: null,
@@ -57,10 +57,10 @@ export const useAppointmentBookingStore = create<AppointmentBookingStore>((set, 
   isLoading: false,
 
   // Modal management actions
-  openModal: (teacherId?: string, preselectedSlot?: AvailableSlot) => {
+  openModal: (_teacherId?: string, preselectedSlot?: AvailableSlot) => {
     set({
       isOpen: true,
-      currentStep: teacherId && preselectedSlot ? 'mode' : (teacherId ? 'slot' : 'teacher'),
+      currentStep: 'child_info',
       selectedSlot: preselectedSlot || null,
       bookingError: null,
     })
@@ -72,7 +72,7 @@ export const useAppointmentBookingStore = create<AppointmentBookingStore>((set, 
 
   resetModal: () => {
     set({
-      currentStep: 'teacher',
+      currentStep: 'child_info',
       selectedTeacher: null,
       selectedSlot: null,
       selectedMode: null,
