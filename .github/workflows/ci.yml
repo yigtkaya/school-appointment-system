@@ -50,7 +50,7 @@ jobs:
           docker compose -f deployment/docker-compose.prod.yml build --no-cache
 
           echo "🔄 Restarting services..."
-          docker compose -f deployment/docker-compose.prod.yml up -d
+          docker compose -f deployment/docker-compose.prod.yml --env-file .env up -d postgres api
 
           echo "⏳ Waiting for services to start..."
           sleep 20
@@ -72,5 +72,5 @@ jobs:
         script: |
           echo "🏥 Running health check..."
           sleep 5
-          curl -f http://localhost:8000/health || (echo "❌ Health check failed!" && exit 1)
+          curl -f http://localhost:8000/ || (echo "❌ Health check failed!" && exit 1)
           echo "✅ Health check passed!"
