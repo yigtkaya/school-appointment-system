@@ -1,6 +1,4 @@
-import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { AppointmentBookingModal } from '@/features/appointments/AppointmentBookingModal'
 import { Button } from '@/components/ui/button'
 import { Calendar } from 'lucide-react'
 
@@ -9,7 +7,6 @@ export const Route = createFileRoute('/')({
 })
 
 function LandingPage() {
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -25,14 +22,15 @@ function LandingPage() {
 
           {/* Book Appointment Button */}
           <div className="mb-12">
-            <Button
-              size="lg"
-              onClick={() => setIsBookingModalOpen(true)}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              <Calendar className="mr-2 h-5 w-5" />
-              Book an Appointment Now
-            </Button>
+            <Link to="/login">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Book an Appointment Now
+              </Button>
+            </Link>
             <p className="text-sm text-gray-500 mt-3">No login required - Quick and easy!</p>
           </div>
           
@@ -65,12 +63,11 @@ function LandingPage() {
               <p className="text-gray-600 mb-6">
                 No account needed! Just enter your child's name, year, and class to book an appointment instantly.
               </p>
-              <Button
-                onClick={() => setIsBookingModalOpen(true)}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
-              >
-                Book Now
-              </Button>
+              <Link to="/login">
+                <Button className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                  Book Now
+                </Button>
+              </Link>
             </div>
             
             <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">

@@ -1,4 +1,5 @@
 export { AppointmentBookingModal } from './AppointmentBookingModal'
+export { AppointmentDetailsModal } from './AppointmentDetailsModal'
 export { SlotSelector } from './SlotSelector'
 export { MeetingModeSelector } from './MeetingModeSelector'
 export { BookingConfirmation } from './BookingConfirmation'

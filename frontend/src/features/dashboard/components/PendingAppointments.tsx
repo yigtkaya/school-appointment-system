@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, User, Calendar, CheckCircle, XCircle } from 'lucide-react'
+import { AlertCircle, User, Calendar, CheckCircle, XCircle, Eye } from 'lucide-react'
 import { formatDate, formatTime } from '@/lib/day-time-utils'
+import { AppointmentDetailsModal } from '@/features/appointments'
 import type { Appointment } from '@/types/api'
 
 interface PendingAppointmentsProps {
@@ -20,6 +22,8 @@ export function PendingAppointments({
   isConfirming = false,
   isRejecting = false,
 }: PendingAppointmentsProps) {
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+
   return (
     <Card className="border-l-4 border-l-amber-500">
       <CardHeader>
@@ -65,6 +69,14 @@ export function PendingAppointments({
                   <div className="flex gap-2 ml-4">
                     <Button
                       size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedAppointmentId(appointment.id)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
                       onClick={() => onConfirm(appointment.id)}
                       disabled={isConfirming}
                       className="bg-green-600 hover:bg-green-700"
@@ -99,6 +111,15 @@ export function PendingAppointments({
           </div>
         )}
       </CardContent>
+
+      {/* Appointment Details Modal */}
+      {selectedAppointmentId && (
+        <AppointmentDetailsModal
+          appointmentId={selectedAppointmentId}
+          open={!!selectedAppointmentId}
+          onClose={() => setSelectedAppointmentId(null)}
+        />
+      )}
     </Card>
   )
 }

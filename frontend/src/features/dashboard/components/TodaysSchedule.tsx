@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Clock, Calendar, User, Eye } from 'lucide-react'
 import { formatTime } from '@/lib/day-time-utils'
 import { getStatusBadgeColor } from '../utils/appointmentUtils'
+import { AppointmentDetailsModal } from '@/features/appointments'
 import type { Appointment } from '@/types/api'
 
 interface TodaysScheduleProps {
@@ -11,6 +13,8 @@ interface TodaysScheduleProps {
 }
 
 export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+
   return (
     <Card>
       <CardHeader>
@@ -47,7 +51,11 @@ export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
                   <Badge className={getStatusBadgeColor(appointment.status)}>
                     {appointment.status}
                   </Badge>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedAppointmentId(appointment.id)}
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </div>
@@ -62,6 +70,15 @@ export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Appointment Details Modal */}
+      {selectedAppointmentId && (
+        <AppointmentDetailsModal
+          appointmentId={selectedAppointmentId}
+          open={!!selectedAppointmentId}
+          onClose={() => setSelectedAppointmentId(null)}
+        />
+      )}
     </Card>
   )
 }

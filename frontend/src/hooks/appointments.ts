@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { appointmentsAPI } from '@/api'
-import type { AppointmentStatus } from '@/types/api'
+import type { AppointmentStatus, MeetingMode } from '@/types/api'
 import { toast } from 'sonner'
 
 // Query keys
@@ -161,6 +161,28 @@ export const useRejectAppointment = () => {
     },
     onError: () => {
       toast.error('Failed to reject appointment')
+    },
+  })
+}
+
+// Hook to update appointment details (notes, meeting_mode)
+export const useUpdateAppointment = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ appointmentId, data }: {
+      appointmentId: string;
+      data: { notes?: string; meeting_mode?: MeetingMode }
+    }) => {
+      return appointmentsAPI.update(appointmentId, data)
+    },
+    onSuccess: (data) => {
+      toast.success('Appointment updated successfully')
+      queryClient.invalidateQueries({ queryKey: appointmentsKeys.all })
+      queryClient.invalidateQueries({ queryKey: appointmentsKeys.detail(data.id) })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update appointment')
     },
   })
 }

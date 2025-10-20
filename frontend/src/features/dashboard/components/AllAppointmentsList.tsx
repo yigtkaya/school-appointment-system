@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Eye } from 'lucide-react'
 import { formatDate, formatTime } from '@/lib/day-time-utils'
 import { getStatusBadgeColor } from '../utils/appointmentUtils'
+import { AppointmentDetailsModal } from '@/features/appointments'
 import type { Appointment } from '@/types/api'
 
 interface AllAppointmentsListProps {
@@ -17,6 +19,8 @@ export function AllAppointmentsList({
   onConfirm,
   onReject,
 }: AllAppointmentsListProps) {
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+
   return (
     <Card>
       <CardHeader>
@@ -49,6 +53,14 @@ export function AllAppointmentsList({
                 <Badge className={getStatusBadgeColor(appointment.status)}>
                   {appointment.status}
                 </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedAppointmentId(appointment.id)}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
                 {appointment.status === 'pending' && (
                   <div className="flex gap-1">
                     <Button size="sm" onClick={() => onConfirm(appointment.id)}>
@@ -71,6 +83,15 @@ export function AllAppointmentsList({
           ))}
         </div>
       </CardContent>
+
+      {/* Appointment Details Modal */}
+      {selectedAppointmentId && (
+        <AppointmentDetailsModal
+          appointmentId={selectedAppointmentId}
+          open={!!selectedAppointmentId}
+          onClose={() => setSelectedAppointmentId(null)}
+        />
+      )}
     </Card>
   )
 }

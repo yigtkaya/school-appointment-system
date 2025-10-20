@@ -12,8 +12,3 @@ export * from './parents'
 export * from './slots'
 export * from './appointments'
 export * from './notifications'
-
-// Dashboard and UI hooks
-export * from './useParentDashboard'
-export * from './useAppointmentBooking'
-export { useParentAppointmentsDashboard } from './useParentAppointments'

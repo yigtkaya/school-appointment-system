@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { teachersAPI, parentsAPI, slotsAPI, notificationsAPI } from '@/api'
-import type { TeacherCreate, ParentCreate, ParentUpdate, SlotCreate, SlotBulkCreate, SlotUpdate, SmartSlotCreate } from '@/types/api'
+import type { TeacherCreate, ParentCreate, ParentUpdate, SlotBulkCreate, SlotUpdate, SmartSlotCreate } from '@/types/api'
 import { toast } from 'sonner'
 import { teachersKeys } from './teachers'
 import { parentsKeys } from './parents'
@@ -122,21 +122,6 @@ export const useDeleteParent = () => {
 // ============================================================================
 
 // Hook to create a single available slot
-export const useCreateSlot = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (data: SlotCreate) => slotsAPI.create(data),
-    onSuccess: () => {
-      toast.success('Slot has been created.')
-      queryClient.invalidateQueries({ queryKey: slotsKeys.all })
-    },
-    onError: () => {
-      toast.error('Error creating slot')
-    },
-  })
-}
-
 // Hook to create multiple slots at once
 export const useCreateBulkSlots = () => {
   const queryClient = useQueryClient()
