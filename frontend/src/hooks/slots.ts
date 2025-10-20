@@ -1,6 +1,6 @@
 // Hooks for fetching and managing slots data
 
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { slotsAPI } from '@/api'
 import type { SmartSlotCreate, SmartSlotPreview } from '@/types/api'
 import { toast } from 'sonner'
@@ -54,6 +54,23 @@ export const useTeacherSchedule = (teacherId: string, weekStart?: string) => {
     queryFn: () => slotsAPI.getTeacherSchedule(teacherId, weekStart ? { week_start: weekStart } : undefined),
     staleTime: 2 * 600 * 1000,
     enabled: !!teacherId,
+  })
+}
+
+// Hook to create a single slot
+export const useCreateSlot = (options?: { onSuccess?: () => void }) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: slotsAPI.create,
+    onSuccess: () => {
+      toast.success('Slot created successfully')
+      queryClient.invalidateQueries({ queryKey: slotsKeys.all })
+      options?.onSuccess?.()
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create slot')
+    },
   })
 }
 

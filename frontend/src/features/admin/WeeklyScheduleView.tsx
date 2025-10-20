@@ -7,9 +7,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Calendar, Clock, User, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, Clock, User, Plus, Sparkles } from 'lucide-react'
 import { formatTime } from '@/lib/day-time-utils'
 import { SmartSlotCreateForm } from './SmartSlotCreateForm'
+import { SingleSlotCreateForm } from './SingleSlotCreateForm'
 import type { AvailableSlot } from '@/types/api'
 import { useTeachers, useSlots, useTeacherByUserId } from '@/hooks'
 import { useScheduleFilterStore } from '@/stores/admin'
@@ -67,6 +68,7 @@ interface WeeklyScheduleViewProps {
 
 export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyScheduleViewProps) {
   const [showSmartSlotDialog, setShowSmartSlotDialog] = useState(false)
+  const [showSingleSlotDialog, setShowSingleSlotDialog] = useState(false)
 
   const { currentWeek, navigateWeek, goToToday } = useScheduleFilterStore()
   const { user } = useAuthStore()
@@ -153,9 +155,14 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
             </div>
           )}
 
-          <Button onClick={() => setShowSmartSlotDialog(true)}>
+          <Button onClick={() => setShowSingleSlotDialog(true)} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
-              Add Availability
+              Single Slot
+          </Button>
+
+          <Button onClick={() => setShowSmartSlotDialog(true)}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Smart Slots
           </Button>
         </div>
 
@@ -333,11 +340,26 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
         </div>
       </div>
 
+      {/* Single Slot Create Dialog */}
+      <Dialog open={showSingleSlotDialog} onOpenChange={setShowSingleSlotDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Single Slot</DialogTitle>
+          </DialogHeader>
+          <SingleSlotCreateForm
+            onClose={() => setShowSingleSlotDialog(false)}
+            onSuccess={() => {
+              setShowSingleSlotDialog(false)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Smart Create Slots Dialog */}
       <Dialog open={showSmartSlotDialog} onOpenChange={setShowSmartSlotDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Availability</DialogTitle>
+            <DialogTitle>Smart Slot Creator</DialogTitle>
           </DialogHeader>
           <SmartSlotCreateForm
             onClose={() => setShowSmartSlotDialog(false)}

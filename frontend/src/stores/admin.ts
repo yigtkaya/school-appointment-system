@@ -7,11 +7,13 @@ import type { AvailableSlot } from '@/types/api'
 
 interface AdminUIState {
   showSmartSlotCreateForm: boolean
+  showSingleSlotCreateForm: boolean
   editingSlot: AvailableSlot | null
 }
 
 interface AdminUIActions {
   setShowSmartSlotCreateForm: (show: boolean) => void
+  setShowSingleSlotCreateForm: (show: boolean) => void
   setEditingSlot: (slot: AvailableSlot | null) => void
 }
 
@@ -20,11 +22,16 @@ export type AdminUIStore = AdminUIState & AdminUIActions
 export const useAdminUIStore = create<AdminUIStore>((set) => ({
   // Initial state
   showSmartSlotCreateForm: false,
+  showSingleSlotCreateForm: false,
   editingSlot: null,
 
   // Actions
   setShowSmartSlotCreateForm: (show: boolean) => {
     set({ showSmartSlotCreateForm: show })
+  },
+
+  setShowSingleSlotCreateForm: (show: boolean) => {
+    set({ showSingleSlotCreateForm: show })
   },
 
   setEditingSlot: (slot: AvailableSlot | null) => {

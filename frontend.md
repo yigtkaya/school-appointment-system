@@ -18,7 +18,7 @@
 ### ❌ Missing Critical Features
 
 ## 🎯 Implementation Roadmap
-
+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 -- personal
 ### Phase 1: Core Functionality (Priority: HIGH)
 
 #### 1. **Appointment Booking System** 

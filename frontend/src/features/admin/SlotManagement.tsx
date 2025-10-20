@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Edit, Trash2, Sparkles, List, Calendar } from 'lucide-react'
+import { Edit, Trash2, Sparkles, List, Calendar, Plus } from 'lucide-react'
 import { SlotEditForm } from './SlotEditForm'
 import { SmartSlotCreateForm } from './SmartSlotCreateForm'
+import { SingleSlotCreateForm } from './SingleSlotCreateForm'
 import { WeeklyScheduleView } from './WeeklyScheduleView'
 import { formatDate, formatTime } from '@/lib/day-time-utils'
 import type { AvailableSlot } from '@/types/api'
@@ -14,6 +15,8 @@ export function SlotManagement() {
   const {
     showSmartSlotCreateForm,
     setShowSmartSlotCreateForm,
+    showSingleSlotCreateForm,
+    setShowSingleSlotCreateForm,
     editingSlot,
     setEditingSlot,
   } = useAdminUIStore()
@@ -102,10 +105,15 @@ export function SlotManagement() {
                   List
                 </Button>
               </div>
-              
+
+              <Button onClick={() => setShowSingleSlotCreateForm(true)} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Single Slot
+              </Button>
+
               <Button onClick={() => setShowSmartSlotCreateForm(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Create Slots
+                Smart Slots
               </Button>
             </div>
           </div>
@@ -218,6 +226,16 @@ export function SlotManagement() {
         <WeeklyScheduleView 
           selectedTeacher={selectedTeacher}
           onTeacherChange={setSelectedTeacher}
+        />
+      )}
+
+      {/* Single Slot Create Form */}
+      {showSingleSlotCreateForm && (
+        <SingleSlotCreateForm
+          onClose={() => setShowSingleSlotCreateForm(false)}
+          onSuccess={() => {
+            setShowSingleSlotCreateForm(false)
+          }}
         />
       )}
 
