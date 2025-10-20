@@ -12,15 +12,24 @@ import { AppointmentBookingModal } from '@/features/appointments'
 
 type ViewMode = 'home' | 'appointments' | 'booking'
 
-export function ParentDashboard() {
+interface ParentDashboardProps {
+  parentId?: string
+  isPublic?: boolean
+}
+
+export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardProps = {}) {
   const { user } = useAuthStore()
   const [currentView, setCurrentView] = useState<ViewMode>('home')
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
 
+  // Use provided parentId, authenticated user's id, or none if public and no auth
+  const effectiveParentId = parentId || user?.id
+  const shouldFetchAppointments = !isPublic || !!effectiveParentId
+
   const { data: parentAppointments } = useQuery({
-    queryKey: ['parent-appointments', user?.id],
-    queryFn: () => appointmentsAPI.getParentAppointments(user?.id || ''),
-    enabled: !!user?.id,
+    queryKey: ['parent-appointments', effectiveParentId],
+    queryFn: () => appointmentsAPI.getParentAppointments(effectiveParentId || ''),
+    enabled: shouldFetchAppointments && !!effectiveParentId,
   })
 
   const getStatusBadgeColor = (status: string) => {
@@ -46,13 +55,6 @@ export function ParentDashboard() {
   const renderHomeView = () => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
       <div className="w-full max-w-4xl mx-auto px-6">
-        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome back, {user?.full_name?.split(' ')[0]}!
-          </h1>
-          <p className="text-xl text-gray-600">What would you like to do today?</p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Book New Appointment Card */}
           <Card 

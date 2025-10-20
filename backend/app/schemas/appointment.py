@@ -5,7 +5,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from app.core.constants import MeetingMode, AppointmentStatus
-from app.schemas.parent import ParentWithUser
 from app.schemas.teacher import TeacherWithUser
 from app.schemas.slot import SlotWithTeacher
 
@@ -71,7 +70,6 @@ class AppointmentResponse(BaseModel):
 class AppointmentWithRelations(AppointmentResponse):
     """Schema for appointment response with related information."""
 
-    parent: Optional[ParentWithUser] = None  # Optional for anonymous bookings
     teacher: TeacherWithUser
     slot: SlotWithTeacher
 
@@ -122,9 +120,3 @@ class TeacherScheduleResponse(BaseModel):
     summary: AppointmentSummary
 
 
-class ParentAppointmentsResponse(BaseModel):
-    """Schema for parent appointments response."""
-    
-    parent_id: str
-    appointments: list[AppointmentWithRelations]
-    summary: AppointmentSummary

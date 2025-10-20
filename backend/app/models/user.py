@@ -9,7 +9,7 @@ from app.core.constants import UserRole
 
 
 class User(Base):
-    """User model for all user types (admin, teacher, parent)."""
+    """User model for all user types (admin, teacher)."""
     
     __tablename__ = "users"
     
@@ -24,7 +24,6 @@ class User(Base):
     
     # Relationships
     teacher = relationship("Teacher", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    parent = relationship("Parent", back_populates="user", uselist=False, cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
         return f"<User {self.email} ({self.role})>"

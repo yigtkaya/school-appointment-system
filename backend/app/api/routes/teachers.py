@@ -27,7 +27,6 @@ async def get_teachers(
     subject: Optional[str] = Query(None, description="Filter by subject"),
     branch: Optional[str] = Query(None, description="Filter by branch"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> TeacherListResponse:
     """Get all teachers with optional filters."""
     
@@ -72,7 +71,6 @@ async def create_teacher(
 async def get_teacher(
     teacher_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> TeacherWithUser:
     """Get a specific teacher by ID."""
     

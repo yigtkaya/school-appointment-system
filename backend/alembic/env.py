@@ -18,7 +18,6 @@ from app.db.base import Base
 # Import all models to ensure they're registered with SQLAlchemy
 from app.models.user import User
 from app.models.teacher import Teacher
-from app.models.parent import Parent
 from app.models.slot import AvailableSlot
 from app.models.appointment import Appointment
 from app.models.notification import Notification
