@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,13 +15,14 @@ interface TodaysScheduleProps {
 
 export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-5 h-5" />
-          Today's Schedule
+          {t('appointments.modal.dateTime')}
         </CardTitle>
         <p className="text-sm text-gray-600">
           {new Date().toLocaleDateString('en-US', {
@@ -49,7 +51,7 @@ export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={getStatusBadgeColor(appointment.status)}>
-                    {appointment.status}
+                    {t(`appointments.status.${appointment.status}`)}
                   </Badge>
                   <Button
                     variant="outline"
@@ -65,8 +67,8 @@ export function TodaysSchedule({ appointments }: TodaysScheduleProps) {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>No appointments today</p>
-            <p className="text-sm">Enjoy your free day!</p>
+            <p>{t('appointments.schedule.noScheduleAvailable')}</p>
+            <p className="text-sm">{t('common.today')}</p>
           </div>
         )}
       </CardContent>

@@ -14,7 +14,7 @@ class Appointment(Base):
     __tablename__ = "appointments"
 
     id = Column(String, primary_key=True, index=True)
-    parent_id = Column(String, ForeignKey("parents.id"), nullable=True, index=True)  # Made optional for anonymous booking
+    parent_id = Column(String, nullable=True, index=True)  # For backward compatibility, no foreign key constraint
     teacher_id = Column(String, ForeignKey("teachers.id"), nullable=False, index=True)
     slot_id = Column(String, ForeignKey("available_slots.id"), unique=True, nullable=False, index=True)
     meeting_mode = Column(SQLEnum(MeetingMode), nullable=False)
@@ -32,7 +32,6 @@ class Appointment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    parent = relationship("Parent", back_populates="appointments")
     teacher = relationship("Teacher", back_populates="appointments")
     slot = relationship("AvailableSlot", back_populates="appointment")
     

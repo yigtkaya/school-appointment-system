@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useTranslation } from 'react-i18next'
 import { 
   Calendar, 
   Clock, 
@@ -32,9 +33,6 @@ interface BookingConfirmationProps {
   error?: string | null
 }
 
-const DAYS_OF_WEEK = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-]
 
 export function BookingConfirmation({
   teacher,
@@ -47,6 +45,12 @@ export function BookingConfirmation({
   isLoading = false,
   error = null
 }: BookingConfirmationProps) {
+  const { t } = useTranslation()
+  const DAYS_OF_WEEK = [
+    t('common.days.monday'), t('common.days.tuesday'), t('common.days.wednesday'), 
+    t('common.days.thursday'), t('common.days.friday'), t('common.days.saturday'), t('common.days.sunday')
+  ]
+  
   const dayName = DAYS_OF_WEEK[slot.day_of_week]
   const formattedDate = formatDate(slot.week_start_date, slot.day_of_week)
   const timeRange = formatTimeRange(slot.start_time, slot.end_time)
@@ -57,10 +61,10 @@ export function BookingConfirmation({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            Confirm Your Appointment
+            {t('appointments.confirmation.confirmAppointment')}
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Please review the appointment details before confirming.
+            {t('appointments.confirmation.confirmAppointmentDesc')}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -89,7 +93,7 @@ export function BookingConfirmation({
             <div className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-gray-900">Date & Time</span>
+                <span className="font-medium text-gray-900">{t('appointments.confirmation.dateTime')}</span>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-gray-800">{dayName}</p>
@@ -109,16 +113,16 @@ export function BookingConfirmation({
                 ) : (
                   <MapPin className="h-4 w-4 text-gray-600" />
                 )}
-                <span className="font-medium text-gray-900">Meeting Format</span>
+                <span className="font-medium text-gray-900">{t('appointments.confirmation.meetingFormat')}</span>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-gray-800">
-                  {meetingMode === 'online' ? 'Online Meeting' : 'Face-to-Face'}
+                  {meetingMode === 'online' ? t('appointments.confirmation.onlineMeeting') : t('appointments.confirmation.faceToFace')}
                 </p>
                 <p className="text-xs text-gray-600">
                   {meetingMode === 'online' 
-                    ? 'Meeting link will be sent via email'
-                    : 'Meeting will be held at school premises'
+                    ? t('appointments.confirmation.onlineMeetingLink')
+                    : t('appointments.confirmation.faceToFaceLocation')
                   }
                 </p>
               </div>
@@ -130,20 +134,20 @@ export function BookingConfirmation({
             <div className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <User className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-gray-900">Student Information</span>
+                <span className="font-medium text-gray-900">{t('appointments.confirmation.studentInformation')}</span>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Student Name:</span>
+                  <span className="text-gray-600">{t('appointments.confirmation.studentName')}</span>
                   <p className="font-medium text-gray-900">{childInfo.child_name}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Year & Class:</span>
-                  <p className="font-medium text-gray-900">Year {childInfo.child_year}, Class {childInfo.child_class}</p>
+                  <span className="text-gray-600">{t('appointments.confirmation.yearClass')}</span>
+                  <p className="font-medium text-gray-900">{t('appointments.modal.yearClass', { year: childInfo.child_year, class: childInfo.child_class })}</p>
                 </div>
                 {childInfo.parent_contact && (
                   <div className="col-span-2">
-                    <span className="text-gray-600">Contact:</span>
+                    <span className="text-gray-600">{t('appointments.confirmation.contact')}</span>
                     <p className="font-medium text-gray-900">{childInfo.parent_contact}</p>
                   </div>
                 )}
@@ -156,7 +160,7 @@ export function BookingConfirmation({
             <div className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-gray-900">Additional Notes</span>
+                <span className="font-medium text-gray-900">{t('appointments.confirmation.additionalNotes')}</span>
               </div>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{notes}</p>
             </div>
@@ -167,7 +171,7 @@ export function BookingConfirmation({
             <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="font-medium text-red-900">Booking Error</span>
+                <span className="font-medium text-red-900">{t('appointments.confirmation.bookingError')}</span>
               </div>
               <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
@@ -175,24 +179,24 @@ export function BookingConfirmation({
 
           {/* Important Information */}
           <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg">
-            <h4 className="font-medium text-amber-900 mb-2">Important Information</h4>
+            <h4 className="font-medium text-amber-900 mb-2">{t('appointments.confirmation.importantInformation')}</h4>
             <ul className="space-y-1 text-sm text-amber-800">
               <li className="flex items-start gap-2">
                 <div className="w-1 h-1 bg-amber-600 rounded-full mt-2" />
                 <span>
-                  You will receive a confirmation email with all appointment details
+                  {t('appointments.confirmation.confirmationEmail')}
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="w-1 h-1 bg-amber-600 rounded-full mt-2" />
                 <span>
-                  Please arrive 5 minutes early for face-to-face meetings
+                  {t('appointments.confirmation.arriveEarly')}
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="w-1 h-1 bg-amber-600 rounded-full mt-2" />
                 <span>
-                  You can cancel or reschedule up to 24 hours before the appointment
+                  {t('appointments.confirmation.cancelReschedule')}
                 </span>
               </li>
             </ul>
@@ -205,7 +209,7 @@ export function BookingConfirmation({
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Booking...' : 'Confirm Appointment'}
+              {isLoading ? t('appointments.confirmation.booking') : t('appointments.confirmation.confirmAppointmentBtn')}
             </Button>
             <Button
               variant="outline"
@@ -213,7 +217,7 @@ export function BookingConfirmation({
               disabled={isLoading}
               className="flex-1"
             >
-              Edit Details
+              {t('appointments.confirmation.editDetails')}
             </Button>
           </div>
         </CardContent>

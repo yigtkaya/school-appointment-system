@@ -38,7 +38,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
+    // Clear localStorage first
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_data')
+      localStorage.removeItem('auth_token')
+    }
+    
+    // Clear API token
     authAPI.logout()
+    
+    // Update auth state
     set({
       user: null,
       isAuthenticated: false,

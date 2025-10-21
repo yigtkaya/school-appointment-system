@@ -1,6 +1,7 @@
 import { Video, MapPin, Check } from 'lucide-react'
 import { MeetingMode } from '@/types/api'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface MeetingModeSelectorProps {
   selectedMode: MeetingMode | null
@@ -8,36 +9,39 @@ interface MeetingModeSelectorProps {
   disabled?: boolean
 }
 
-const MEETING_OPTIONS = [
-  {
-    mode: MeetingMode.ONLINE,
-    title: 'Online Meeting',
-    description: 'Video call via preferred platform',
-    icon: Video,
-  },
-  {
-    mode: MeetingMode.FACE_TO_FACE,
-    title: 'Face-to-Face',
-    description: 'In-person meeting at school',
-    icon: MapPin,
-  }
-] as const
 
 export function MeetingModeSelector({ 
   selectedMode, 
   onModeSelect, 
   disabled = false 
 }: MeetingModeSelectorProps) {
+  const { t } = useTranslation()
+  
+  const MEETING_OPTIONS = [
+    {
+      mode: MeetingMode.ONLINE,
+      title: t('appointments.bookingFlow.onlineMeeting'),
+      description: t('appointments.bookingFlow.onlineMeetingDesc'),
+      icon: Video,
+    },
+    {
+      mode: MeetingMode.FACE_TO_FACE,
+      title: t('appointments.bookingFlow.faceToFace'),
+      description: t('appointments.bookingFlow.faceToFaceDesc'),
+      icon: MapPin,
+    }
+  ]
+  
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
           <Video className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Choose Meeting Format</h3>
+          <h3 className="text-lg font-semibold">{t('appointments.bookingFlow.chooseMeetingFormat')}</h3>
         </div>
         <p className="text-sm text-gray-600">
-          Select how you'd like to conduct the appointment with the teacher.
+          {t('appointments.bookingFlow.chooseMeetingFormatDesc')}
         </p>
       </div>
 
@@ -85,19 +89,19 @@ export function MeetingModeSelector({
 
       {/* Info Section */}
       <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-        <h4 className="text-sm font-medium text-gray-900">Quick Info</h4>
+        <h4 className="text-sm font-medium text-gray-900">{t('appointments.bookingFlow.quickInfo')}</h4>
         <ul className="space-y-2 text-xs text-gray-600">
           <li className="flex items-start gap-2">
             <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0" />
-            <span>Online meetings include connection details in the confirmation email</span>
+            <span>{t('appointments.bookingFlow.onlineConnectionDetails')}</span>
           </li>
           <li className="flex items-start gap-2">
             <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0" />
-            <span>Face-to-face meetings are held at the teacher's office or designated room</span>
+            <span>{t('appointments.bookingFlow.faceToFaceLocation')}</span>
           </li>
           <li className="flex items-start gap-2">
             <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0" />
-            <span>You can change the format up to 24 hours before the appointment</span>
+            <span>{t('appointments.bookingFlow.formatChangeInfo')}</span>
           </li>
         </ul>
       </div>

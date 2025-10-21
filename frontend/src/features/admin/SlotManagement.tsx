@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Edit, Trash2, Sparkles, List, Calendar, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { SlotEditForm } from './SlotEditForm'
 import { SmartSlotCreateForm } from './SmartSlotCreateForm'
 import { SingleSlotCreateForm } from './SingleSlotCreateForm'
@@ -12,6 +13,7 @@ import { useSlots, useTeachers, useDeleteSlot } from '@/hooks'
 import { useAdminUIStore, useScheduleFilterStore } from '@/stores/admin'
 
 export function SlotManagement() {
+  const { t } = useTranslation()
   const {
     showSmartSlotCreateForm,
     setShowSmartSlotCreateForm,
@@ -35,11 +37,11 @@ export function SlotManagement() {
 
   const handleDeleteSlot = async (slot: AvailableSlot) => {
     if (slot.is_booked) {
-      alert('Cannot delete a booked slot')
+      alert(t('slot.cannotDeleteBooked'))
       return
     }
 
-    if (window.confirm(`Are you sure you want to delete this slot? This action cannot be undone.`)) {
+    if (window.confirm(t('slot.confirmDelete'))) {
       try {
         await deleteSlotMutation.mutateAsync(slot.id)
       } catch (error) {
@@ -49,8 +51,8 @@ export function SlotManagement() {
   }
 
   const getDayName = (dayNumber: number) => {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    return days[dayNumber] || 'Unknown'
+    const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    return t(`days.${dayKeys[dayNumber]}`) || 'Unknown'
   }
 
   if (slotsLoading) {
@@ -58,7 +60,7 @@ export function SlotManagement() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
-            <div className="text-gray-500">Loading slots...</div>
+            <div className="text-gray-500">{t('slot.loading')}</div>
           </div>
         </CardContent>
       </Card>
@@ -70,7 +72,7 @@ export function SlotManagement() {
       <Card>
         <CardContent className="p-6">
           <div className="text-red-600">
-            Error loading slots: {slotsError instanceof Error ? slotsError.message : 'Unknown error'}
+            {t('slot.errorLoading')}: {slotsError instanceof Error ? slotsError.message : 'Unknown error'}
           </div>
         </CardContent>
       </Card>
@@ -82,7 +84,7 @@ export function SlotManagement() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Slot Management</CardTitle>
+            <CardTitle>{t('slot.management')}</CardTitle>
             <div className="flex items-center space-x-3">
               {/* View Toggle */}
               <div className="flex items-center border border-gray-300 rounded-md">
@@ -93,7 +95,7 @@ export function SlotManagement() {
                   className="rounded-r-none"
                 >
                   <Calendar className="w-4 h-4 mr-1" />
-                  Calendar
+                  {t('calendar.month')}
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -102,18 +104,18 @@ export function SlotManagement() {
                   className="rounded-l-none border-l"
                 >
                   <List className="w-4 h-4 mr-1" />
-                  List
+                  {t('common.search')}
                 </Button>
               </div>
 
               <Button onClick={() => setShowSingleSlotCreateForm(true)} variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
-                Single Slot
+                {t('slot.singleCreate')}
               </Button>
 
               <Button onClick={() => setShowSmartSlotCreateForm(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Smart Slots
+                {t('slot.smartCreate')}
               </Button>
             </div>
           </div>
@@ -123,7 +125,7 @@ export function SlotManagement() {
             {/* Teacher Filter */}
             <div className="mb-6">
               <label htmlFor="teacher-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Teacher
+                {t('slot.form.selectTeacher')}
               </label>
               <select
                 id="teacher-filter"
@@ -131,7 +133,7 @@ export function SlotManagement() {
                 onChange={(e) => setSelectedTeacher(e.target.value)}
                 className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">All Teachers</option>
+                <option value="">{t('common.select')}</option>
                 {teachers?.map((teacher) => (
                   <option key={teacher.id} value={teacher.id}>
                     {teacher.user?.full_name} - {teacher.subject}
@@ -161,20 +163,20 @@ export function SlotManagement() {
                         </div>
                         <div className="flex items-center space-x-4 mt-2">
                           <div className="text-sm">
-                            <span className="font-medium">Day:</span> {getDayName(slot.day_of_week)}
+                            <span className="font-medium">{t('appointments.date')}:</span> {getDayName(slot.day_of_week)}
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium">Time:</span> {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            <span className="font-medium">{t('appointments.time')}:</span> {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium">Week:</span> {formatDate(slot.week_start_date)}
+                            <span className="font-medium">{t('slots.weeklySchedule')}:</span> {formatDate(slot.week_start_date)}
                           </div>
                         </div>
                         <div className="mt-2">
                           <Badge 
                             variant={slot.is_booked ? "destructive" : "default"}
                           >
-                            {slot.is_booked ? 'Booked' : 'Available'}
+                            {slot.is_booked ? t('slot.booked') : t('slot.available')}
                           </Badge>
                         </div>
                       </div>
@@ -188,7 +190,7 @@ export function SlotManagement() {
                         onClick={() => setEditingSlot(slot)}
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        {t('buttons.edit')}
                       </Button>
                     )}
                     {!slot.is_booked && (
@@ -199,12 +201,12 @@ export function SlotManagement() {
                         disabled={deleteSlotMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        {t('buttons.delete')}
                       </Button>
                     )}
                     {slot.is_booked && (
                       <Button variant="outline" size="sm" disabled>
-                        View Appointment
+                        {t('buttons.view')} {t('appointments.title')}
                       </Button>
                     )}
                   </div>
@@ -213,7 +215,7 @@ export function SlotManagement() {
               
               {(!slots || slots.length === 0) && (
                 <div className="text-center py-8 text-gray-500">
-                  No slots found. Add a slot to get started.
+                  {t('slot.noSlots')}
                 </div>
               )}
             </div>

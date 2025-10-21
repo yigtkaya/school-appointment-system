@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { teachersAPI, parentsAPI, appointmentsAPI, notificationsAPI } from '@/api'
 import { type Appointment, type Parent, type Notification } from '@/types/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,7 @@ enum TabOption {
 }
 
 export function AdminDashboard() {
+  const { t } = useTranslation()
   const [selectedTab, setSelectedTab] = useState<TabOption>(TabOption.OVERVIEW)
 
   const { data: teachers } = useQuery({
@@ -61,7 +63,7 @@ export function AdminDashboard() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('teacher.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{teachers?.length || 0}</div>
@@ -70,7 +72,7 @@ export function AdminDashboard() {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Parents</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('admin.parents')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{parents?.length || 0}</div>
@@ -79,7 +81,7 @@ export function AdminDashboard() {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('appointments.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{appointments?.length || 0}</div>
@@ -88,7 +90,7 @@ export function AdminDashboard() {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('admin.notifications')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{notifications?.length || 0}</div>
@@ -97,7 +99,7 @@ export function AdminDashboard() {
 
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle>Recent Appointments</CardTitle>
+          <CardTitle>{t('dashboard.upcomingAppointments')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -126,7 +128,7 @@ export function AdminDashboard() {
   const renderParents = () => (
     <Card>
       <CardHeader>
-        <CardTitle>Parents Management</CardTitle>
+        <CardTitle>{t('admin.parents')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -136,12 +138,12 @@ export function AdminDashboard() {
                 <div className="font-medium">{parent.user?.full_name}</div>
                 <div className="text-sm text-gray-600">{parent.user?.email}</div>
                 <div className="text-sm text-gray-500">
-                  Student: {parent.student_name} - Class: {parent.student_class}
+                  {t('appointments.student')}: {parent.student_name} - {t('appointments.form.childClass')}: {parent.student_class}
                 </div>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm">Edit</Button>
-                <Button variant="destructive" size="sm">Delete</Button>
+                <Button variant="outline" size="sm">{t('buttons.edit')}</Button>
+                <Button variant="destructive" size="sm">{t('buttons.delete')}</Button>
               </div>
             </div>
           ))}
@@ -153,7 +155,7 @@ export function AdminDashboard() {
   const renderAppointments = () => (
     <Card>
       <CardHeader>
-        <CardTitle>All Appointments</CardTitle>
+        <CardTitle>{t('appointments.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -162,18 +164,18 @@ export function AdminDashboard() {
               <div>
                 <div className="font-medium">{appointment.parent?.student_name}</div>
                 <div className="text-sm text-gray-600">
-                  Teacher: {appointment.teacher?.user?.full_name} ({appointment.teacher?.subject})
+                  {t('appointments.teacher')}: {appointment.teacher?.user?.full_name} ({appointment.teacher?.subject})
                 </div>
                 <div className="text-sm text-gray-500">
                   {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
                 </div>
-                <div className="text-sm text-gray-500">Mode: {appointment.meeting_mode}</div>
+                <div className="text-sm text-gray-500">{t('appointments.meetingMode')}: {appointment.meeting_mode}</div>
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className={getStatusBadgeColor(appointment.status)}>
-                  {appointment.status}
+                  {t(`appointments.status.${appointment.status}`)}
                 </Badge>
-                <Button variant="outline" size="sm">View</Button>
+                <Button variant="outline" size="sm">{t('buttons.view')}</Button>
               </div>
             </div>
           ))}
@@ -185,7 +187,7 @@ export function AdminDashboard() {
   const renderNotifications = () => (
     <Card>
       <CardHeader>
-        <CardTitle>Notification Management</CardTitle>
+        <CardTitle>{t('admin.notifications')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -193,8 +195,8 @@ export function AdminDashboard() {
             <div key={notification.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <div className="font-medium">{notification.subject}</div>
-                <div className="text-sm text-gray-600">To: {notification.recipient_email}</div>
-                <div className="text-sm text-gray-500">Type: {notification.type}</div>
+                <div className="text-sm text-gray-600">{t('common.required')}: {notification.recipient_email}</div>
+                <div className="text-sm text-gray-500">{t('common.required')}: {notification.type}</div>
                 <div className="text-sm text-gray-500">{formatDate(notification.created_at)}</div>
               </div>
               <div className="flex items-center space-x-2">
@@ -202,7 +204,7 @@ export function AdminDashboard() {
                   {notification.status}
                 </Badge>
                 {notification.status === 'failed' && (
-                  <Button variant="outline" size="sm">Retry</Button>
+                  <Button variant="outline" size="sm">{t('buttons.refresh')}</Button>
                 )}
               </div>
             </div>
@@ -212,12 +214,24 @@ export function AdminDashboard() {
     </Card>
   )
 
+  const getTabLabel = (tab: string): string => {
+    const tabLabels: Record<string, string> = {
+      overview: t('admin.overview'),
+      teachers: t('teachers.title'),
+      slots: t('slots.title'),
+      parents: t('admin.parents'),
+      appointments: t('appointments.title'),
+      notifications: t('admin.notifications'),
+    }
+    return tabLabels[tab] || tab
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage the school appointment system</p>
+          <h1 className="text-3xl font-bold">{t('admin.title')}</h1>
+          <p className="text-gray-600">{t('admin.managementTitle')}</p>
         </div>
 
         <div className="flex space-x-4 border-b">
@@ -225,13 +239,13 @@ export function AdminDashboard() {
             <button
               key={tab}
               onClick={() => setSelectedTab(tab as TabOption)}
-              className={`px-4 py-2 font-medium capitalize ${
+              className={`px-4 py-2 font-medium ${
                 selectedTab === tab
                   ? 'border-b-2 border-blue-500 text-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {tab}
+              {getTabLabel(tab)}
             </button>
           ))}
         </div>

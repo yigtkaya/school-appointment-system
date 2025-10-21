@@ -8,13 +8,17 @@ import {
 } from '@/components/ui/dialog'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, Plus, Sparkles } from 'lucide-react'
+import { SlotDetailsModal } from '@/features/appointments/SlotDetailsModal'
+import { AppointmentDetailsModal } from '@/features/appointments/AppointmentDetailsModal'
 import { formatTime } from '@/lib/day-time-utils'
 import { SmartSlotCreateForm } from './SmartSlotCreateForm'
 import { SingleSlotCreateForm } from './SingleSlotCreateForm'
 import type { AvailableSlot } from '@/types/api'
 import { useTeachers, useSlots, useTeacherByUserId } from '@/hooks'
+import { useTeacherTodaysAppointments } from '@/hooks/appointments'
 import { useScheduleFilterStore } from '@/stores/admin'
 import { useAuthStore, useIsTeacher } from '@/stores/auth'
+import { t } from 'i18next'
 
 enum WeekDay {
   MONDAY = 0,
@@ -69,6 +73,8 @@ interface WeeklyScheduleViewProps {
 export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyScheduleViewProps) {
   const [showSmartSlotDialog, setShowSmartSlotDialog] = useState(false)
   const [showSingleSlotDialog, setShowSingleSlotDialog] = useState(false)
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
 
   const { currentWeek, navigateWeek, goToToday } = useScheduleFilterStore()
   const { user } = useAuthStore()
@@ -86,7 +92,29 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
     // Remove week_start filter to show all slots, we'll filter client-side
   })
 
+  // Fetch appointments for this teacher to find appointments for slots
+  const { data: appointmentsData } = useTeacherTodaysAppointments(effectiveTeacherId || '')
+
   const allSlots = slotsResponse?.slots || []
+  
+  // Function to handle slot clicks
+  const handleSlotClick = (slot: AvailableSlot) => {
+    if (slot.is_booked) {
+      // Find the appointment for this slot
+      const appointment = appointmentsData?.find(
+        (appointment: { slot_id: string }) => appointment.slot_id === slot.id
+      )
+      if (appointment) {
+        setSelectedAppointmentId(appointment.id)
+      } else {
+        // Fallback to slot details if no appointment found
+        setSelectedSlotId(slot.id)
+      }
+    } else {
+      // Available slot - show slot details
+      setSelectedSlotId(slot.id)
+    }
+  }
 
   // Filter slots to show only those that belong to the current week being viewed
   const slots = allSlots.filter((slot: AvailableSlot) => {
@@ -265,6 +293,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                             {daySlots.map(slot => (
                               <div
                                 key={slot.id}
+                                onClick={() => handleSlotClick(slot)}
                                 className={`
                                   p-3 rounded-lg text-sm cursor-pointer transition-all hover:shadow-md border
                                   ${slot.is_booked 
@@ -272,14 +301,33 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                                     : 'bg-green-100 border-green-200 text-green-700 hover:bg-green-200'
                                   }
                                 `}
-                                title={`${slot.teacher?.user?.full_name} - ${slot.teacher?.subject}\n${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}\n${slot.is_booked ? 'Booked' : 'Available'}`}
+                                title={`Click to view details\n\n${slot.teacher?.user?.full_name} - ${slot.teacher?.subject}\n${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}\n${slot.is_booked ? 'Booked' : 'Available'}${slot.appointment ? `\n\nStudent: ${slot.appointment.child_name}\nYear ${slot.appointment.child_year} - Class ${slot.appointment.child_class}` : ''}`}
                               >
                                 <div className="font-medium text-sm mb-1">
                                   {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
                                 </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {slot.teacher?.user?.full_name || 'Unknown Teacher'}
-                                </div>
+                                
+                                {/* Show student info for booked slots */}
+                                {slot.is_booked && slot.appointment ? (
+                                  <div className="space-y-1 mb-2">
+                                    <div className="text-xs font-medium text-red-800">
+                                      {slot.appointment.child_name}
+                                    </div>
+                                    <div className="text-xs text-red-600">
+                                      Year {slot.appointment.child_year} - Class {slot.appointment.child_class}
+                                    </div>
+                                    {slot.appointment.parent_contact && (
+                                      <div className="text-xs text-red-500 truncate">
+                                        {slot.appointment.parent_contact}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-600 mb-2">
+                                    {slot.teacher?.user?.full_name || 'Unknown Teacher'}
+                                  </div>
+                                )}
+                                
                                 <div className="text-xs text-gray-500">
                                   {slot.teacher?.subject}
                                 </div>
@@ -288,7 +336,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                                     variant={slot.is_booked ? "destructive" : "default"}
                                     className="text-xs"
                                   >
-                                    {slot.is_booked ? 'Booked' : 'Available'}
+                                    {slot.is_booked ? t('slot.booked') : t('slot.available')}
                                   </Badge>
                                 </div>
                               </div>
@@ -342,16 +390,21 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
 
       {/* Single Slot Create Dialog */}
       <Dialog open={showSingleSlotDialog} onOpenChange={setShowSingleSlotDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Single Slot</DialogTitle>
-          </DialogHeader>
-          <SingleSlotCreateForm
-            onClose={() => setShowSingleSlotDialog(false)}
-            onSuccess={() => {
-              setShowSingleSlotDialog(false)
-            }}
-          />
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl font-bold text-gray-900">Create Single Slot</DialogTitle>
+              <p className="text-sm text-gray-600">Add a new appointment slot for a teacher</p>
+            </div>
+            <div className="border-t border-gray-200 pt-4">
+              <SingleSlotCreateForm
+                onClose={() => setShowSingleSlotDialog(false)}
+                onSuccess={() => {
+                  setShowSingleSlotDialog(false)
+                }}
+              />
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -369,6 +422,24 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
           />
         </DialogContent>
       </Dialog>
+
+      {/* Slot Details Modal */}
+      {selectedSlotId && (
+        <SlotDetailsModal
+          slotId={selectedSlotId}
+          open={!!selectedSlotId}
+          onClose={() => setSelectedSlotId(null)}
+        />
+      )}
+
+      {/* Appointment Details Modal */}
+      {selectedAppointmentId && (
+        <AppointmentDetailsModal
+          appointmentId={selectedAppointmentId}
+          open={!!selectedAppointmentId}
+          onClose={() => setSelectedAppointmentId(null)}
+        />
+      )}
     </div>
   )
 }

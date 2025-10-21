@@ -54,7 +54,9 @@ export function TeacherDashboard() {
       <div className="space-y-6">
 
         {currentView === 'dashboard' && renderDashboard()}
-        {currentView === 'manage-slots' && <TeacherSlotManagement />}
+        {currentView === 'manage-slots' && (
+          <TeacherSlotManagement onBackToDashboard={() => setCurrentView('dashboard')} />
+        )}
       </div>
     </DashboardLayout>
   )

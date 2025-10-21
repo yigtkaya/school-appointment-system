@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,20 +24,21 @@ export function PendingAppointments({
   isRejecting = false,
 }: PendingAppointmentsProps) {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   return (
     <Card className="border-l-4 border-l-amber-500">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-amber-600" />
-          Pending Confirmations
+          {t('dashboard.pendingAppointments')}
           {appointments && appointments.length > 0 && (
             <Badge variant="destructive" className="ml-2">
               {appointments.length}
             </Badge>
           )}
         </CardTitle>
-        <p className="text-sm text-gray-600">These appointments need your confirmation</p>
+        <p className="text-sm text-gray-600">{t('appointments.confirmation.confirmAppointmentDesc')}</p>
       </CardHeader>
       <CardContent>
         {appointments && appointments.length > 0 ? (
@@ -61,7 +63,7 @@ export function PendingAppointments({
                       <div>Mode: {appointment.meeting_mode}</div>
                       {appointment.notes && (
                         <div className="bg-white p-2 rounded border">
-                          <strong>Notes:</strong> {appointment.notes}
+                          <strong>{t('appointments.notes')}:</strong> {appointment.notes}
                         </div>
                       )}
                     </div>
@@ -73,7 +75,7 @@ export function PendingAppointments({
                       onClick={() => setSelectedAppointmentId(appointment.id)}
                     >
                       <Eye className="w-4 h-4 mr-1" />
-                      View
+                      {t('buttons.view')}
                     </Button>
                     <Button
                       size="sm"
@@ -82,13 +84,13 @@ export function PendingAppointments({
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Confirm
+                      {t('appointments.confirm')}
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
                       onClick={() => {
-                        const reason = prompt('Please provide a reason for rejecting this appointment:')
+                        const reason = prompt(t('appointments.modal.edit'))
                         if (reason) {
                           onReject(appointment.id, reason)
                         }
@@ -96,7 +98,7 @@ export function PendingAppointments({
                       disabled={isRejecting}
                     >
                       <XCircle className="w-4 h-4 mr-1" />
-                      Reject
+                      {t('appointments.cancel')}
                     </Button>
                   </div>
                 </div>
@@ -106,8 +108,8 @@ export function PendingAppointments({
         ) : (
           <div className="text-center py-8 text-gray-500">
             <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-            <p>No pending appointments to review!</p>
-            <p className="text-sm">All your appointments are up to date.</p>
+            <p>{t('dashboard.noAppointments')}</p>
+            <p className="text-sm">{t('common.today')}</p>
           </div>
         )}
       </CardContent>

@@ -3,19 +3,19 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { teachersAPI } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import type { Teacher } from '@/types/api'
 
-const editTeacherSchema = z.object({
-  subject: z.string().min(1, 'Subject is required'),
-  branch: z.string().optional(),
-  bio: z.string().optional(),
-})
 
-type EditTeacherFormData = z.infer<typeof editTeacherSchema>
+type EditTeacherFormData = {
+  subject: string
+  branch?: string
+  bio?: string
+}
 
 interface TeacherEditFormProps {
   teacher: Teacher
@@ -24,7 +24,14 @@ interface TeacherEditFormProps {
 }
 
 export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditFormProps) {
+  const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
+
+  const editTeacherSchema = z.object({
+    subject: z.string().min(1, t('admin.teacherEdit.validation.subjectRequired')),
+    branch: z.string().optional(),
+    bio: z.string().optional(),
+  })
 
   const {
     register,
@@ -50,7 +57,7 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
       onSuccess()
     },
     onError: (error) => {
-      setError(error instanceof Error ? error.message : 'Failed to update teacher')
+      setError(error instanceof Error ? error.message : t('admin.teacherEdit.errors.failedToUpdate'))
     },
   })
 
@@ -63,13 +70,13 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Edit Teacher</CardTitle>
+          <CardTitle>{t('admin.teacherEdit.title')}</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
         <div className="text-sm text-gray-600">
-          Editing: {teacher.user?.full_name} ({teacher.user?.email})
+          {t('admin.teacherEdit.editing')} {teacher.user?.full_name} ({teacher.user?.email})
         </div>
       </CardHeader>
       <CardContent>
@@ -83,13 +90,13 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                Subject *
+                {t('admin.teacherEdit.subject')} *
               </label>
               <input
                 {...register('subject')}
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Mathematics, English, Science"
+                placeholder={t('admin.teacherEdit.subjectPlaceholder')}
               />
               {errors.subject && (
                 <p className="mt-1 text-sm text-red-600">{errors.subject.message}</p>
@@ -98,13 +105,13 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
 
             <div>
               <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-1">
-                Branch
+                {t('admin.teacherEdit.branch')}
               </label>
               <input
                 {...register('branch')}
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Elementary, High School"
+                placeholder={t('admin.teacherEdit.branchPlaceholder')}
               />
               {errors.branch && (
                 <p className="mt-1 text-sm text-red-600">{errors.branch.message}</p>
@@ -114,13 +121,13 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
 
           <div>
             <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-              Bio
+              {t('admin.teacherEdit.bio')}
             </label>
             <textarea
               {...register('bio')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Brief description about the teacher..."
+              placeholder={t('admin.teacherEdit.bioPlaceholder')}
             />
             {errors.bio && (
               <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
@@ -129,13 +136,13 @@ export function TeacherEditForm({ teacher, onClose, onSuccess }: TeacherEditForm
 
           <div className="flex items-center justify-end space-x-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('admin.teacherEdit.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={updateTeacherMutation.isPending}
             >
-              {updateTeacherMutation.isPending ? 'Updating...' : 'Update Teacher'}
+              {updateTeacherMutation.isPending ? t('admin.teacherEdit.updating') : t('admin.teacherEdit.updateTeacher')}
             </Button>
           </div>
         </form>

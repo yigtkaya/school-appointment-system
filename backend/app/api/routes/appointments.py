@@ -8,10 +8,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.crud.appointment import appointment
 from app.crud.slot import slot
-from app.crud.parent import parent
 from app.crud.teacher import teacher
 from app.tasks.notifications import send_appointment_confirmation, send_appointment_cancellation
-from app.middleware.dependencies import get_current_user, get_admin_user, get_parent_user, get_teacher_or_admin
+from app.middleware.dependencies import get_current_user, get_admin_user, get_teacher_or_admin
 from app.models.user import User
 from app.core.constants import AppointmentStatus
 from app.schemas.appointment import (
@@ -24,7 +23,6 @@ from app.schemas.appointment import (
     AppointmentBookingRequest,
     AppointmentSummary,
     TeacherScheduleResponse,
-    ParentAppointmentsResponse,
 )
 from app.exceptions.http import ResourceNotFoundException, ConflictException, BadRequestException
 
@@ -46,14 +44,7 @@ async def get_appointments(
     """Get all appointments with optional filters."""
     
     # Role-based filtering
-    if current_user.role == "parent":
-        # Parents can only see their own appointments
-        db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if not db_parent:
-            raise ResourceNotFoundException("Parent profile not found")
-        appointments_list = appointment.get_by_parent(db, parent_id=db_parent.id, skip=skip, limit=limit)
-    
-    elif current_user.role == "teacher":
+    if current_user.role == "teacher":
         # Teachers can only see their own appointments
         db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
         if not db_teacher:
@@ -156,12 +147,7 @@ async def get_appointment(
         raise ResourceNotFoundException("Appointment not found")
     
     # Check authorization
-    if current_user.role == "parent":
-        db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if not db_parent or db_appointment.parent_id != db_parent.id:
-            raise HTTPException(status_code=403, detail="Not authorized to view this appointment")
-    
-    elif current_user.role == "teacher":
+    if current_user.role == "teacher":
         db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
         if not db_teacher or db_appointment.teacher_id != db_teacher.id:
             raise HTTPException(status_code=403, detail="Not authorized to view this appointment")
@@ -183,13 +169,11 @@ async def update_appointment(
     if not db_appointment:
         raise ResourceNotFoundException("Appointment not found")
     
-    # Check authorization - only parent or admin can update
-    if current_user.role == "parent":
-        db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if not db_parent or db_appointment.parent_id != db_parent.id:
-            raise HTTPException(status_code=403, detail="Not authorized to update this appointment")
-    elif current_user.role == "teacher":
+    # Check authorization - only admin can update appointment details
+    if current_user.role == "teacher":
         raise HTTPException(status_code=403, detail="Teachers cannot update appointment details")
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this appointment")
     
     # Check if appointment can be updated
     if db_appointment.status in [AppointmentStatus.CANCELLED, AppointmentStatus.COMPLETED]:
@@ -337,14 +321,10 @@ async def cancel_appointment(
     if not db_appointment:
         raise ResourceNotFoundException("Appointment not found")
     
-    # Check authorization
+    # Check authorization - only admin and teachers can cancel appointments
     authorized = False
     if current_user.role == "admin":
         authorized = True
-    elif current_user.role == "parent":
-        db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if db_parent and db_appointment.parent_id == db_parent.id:
-            authorized = True
     elif current_user.role == "teacher":
         db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
         if db_teacher and db_appointment.teacher_id == db_teacher.id:
@@ -372,60 +352,6 @@ async def cancel_appointment(
     return {"message": "Appointment cancelled successfully"}
 
 
-@router.get("/parent/{parent_id}/appointments", response_model=ParentAppointmentsResponse)
-async def get_parent_appointments(
-    parent_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> ParentAppointmentsResponse:
-    """Get all appointments for a specific parent."""
-    
-    # Check authorization and resolve parent_id
-    actual_parent_id = parent_id
-    if current_user.role == "parent":
-        db_parent = parent.get_by_user_id(db, user_id=current_user.id)
-        if not db_parent:
-            raise HTTPException(status_code=403, detail="Parent profile not found")
-        
-        # Allow access if parent_id matches either the parent profile ID or the user ID
-        if db_parent.id != parent_id and current_user.id != parent_id:
-            raise HTTPException(status_code=403, detail="Not authorized to view these appointments")
-        
-        # Use the actual parent profile ID for database queries
-        actual_parent_id = db_parent.id
-    elif current_user.role == "admin":
-        # Admin can access any parent's appointments, but need to validate parent_id exists
-        # Check if parent_id is a user_id, if so convert to parent profile ID
-        db_parent_by_user = parent.get_by_user_id(db, user_id=parent_id)
-        if db_parent_by_user:
-            actual_parent_id = db_parent_by_user.id
-        else:
-            # Assume it's already a parent profile ID, validate it exists
-            db_parent = parent.get(db, id=parent_id)
-            if not db_parent:
-                raise ResourceNotFoundException("Parent not found")
-    else:
-        raise HTTPException(status_code=403, detail="Not authorized to view parent appointments")
-    
-    # Get all appointments for the parent
-    appointments_list = appointment.get_by_parent(db, parent_id=actual_parent_id)
-    
-    # Calculate summary
-    summary = AppointmentSummary(
-        total_appointments=len(appointments_list),
-        pending_appointments=len([a for a in appointments_list if a.status == AppointmentStatus.PENDING]),
-        confirmed_appointments=len([a for a in appointments_list if a.status == AppointmentStatus.CONFIRMED]),
-        completed_appointments=len([a for a in appointments_list if a.status == AppointmentStatus.COMPLETED]),
-        cancelled_appointments=len([a for a in appointments_list if a.status == AppointmentStatus.CANCELLED]),
-        no_show_appointments=len([a for a in appointments_list if a.status == AppointmentStatus.NO_SHOW]),
-    )
-    
-    return ParentAppointmentsResponse(
-        parent_id=actual_parent_id,
-        appointments=appointments_list,
-        summary=summary
-    )
-
 
 @router.get("/teacher/{teacher_id}/appointments", response_model=TeacherScheduleResponse)
 async def get_teacher_appointments(
@@ -435,36 +361,21 @@ async def get_teacher_appointments(
     status: Optional[AppointmentStatus] = Query(None, description="Filter by appointment status"),
     pending_only: bool = Query(False, description="Return only pending appointments"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> TeacherScheduleResponse:
-    """Get all appointments for a specific teacher."""
+    """Get all appointments for a specific teacher (public access for parents to view schedules)."""
     
-    # Check authorization and resolve teacher_id
+    # Resolve teacher_id (could be user_id or teacher profile id)
     actual_teacher_id = teacher_id
-    if current_user.role == "teacher":
-        db_teacher = teacher.get_by_user_id(db, user_id=current_user.id)
-        if not db_teacher:
-            raise HTTPException(status_code=403, detail="Teacher profile not found")
-        
-        # Allow access if teacher_id matches either the teacher profile ID or the user ID
-        if db_teacher.id != teacher_id and current_user.id != teacher_id:
-            raise HTTPException(status_code=403, detail="Not authorized to view these appointments")
-        
-        # Use the actual teacher profile ID for database queries
-        actual_teacher_id = db_teacher.id
-    elif current_user.role == "admin":
-        # Admin can access any teacher's appointments, but need to validate teacher_id exists
-        # Check if teacher_id is a user_id, if so convert to teacher profile ID
-        db_teacher_by_user = teacher.get_by_user_id(db, user_id=teacher_id)
-        if db_teacher_by_user:
-            actual_teacher_id = db_teacher_by_user.id
-        else:
-            # Assume it's already a teacher profile ID, validate it exists
-            db_teacher = teacher.get(db, id=teacher_id)
-            if not db_teacher:
-                raise ResourceNotFoundException("Teacher not found")
+    
+    # Check if teacher_id is a user_id, if so convert to teacher profile ID
+    db_teacher_by_user = teacher.get_by_user_id(db, user_id=teacher_id)
+    if db_teacher_by_user:
+        actual_teacher_id = db_teacher_by_user.id
     else:
-        raise HTTPException(status_code=403, detail="Not authorized to view teacher appointments")
+        # Assume it's already a teacher profile ID, validate it exists
+        db_teacher = teacher.get(db, id=teacher_id)
+        if not db_teacher:
+            raise ResourceNotFoundException("Teacher not found")
     
     # Get appointments with filtering
     if pending_only:

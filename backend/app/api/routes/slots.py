@@ -34,7 +34,6 @@ async def get_slots(
     week_start: Optional[date] = Query(None, description="Filter by week start date"),
     available_only: bool = Query(False, description="Show only available slots"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> SlotListResponse:
     """Get all slots with optional filters."""
     
@@ -158,7 +157,6 @@ async def create_bulk_slots(
 async def get_slot(
     slot_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> SlotWithTeacher:
     """Get a specific slot by ID."""
     
@@ -261,7 +259,6 @@ async def get_teacher_weekly_schedule(
     teacher_id: str,
     week_start: date = Query(..., description="Start date of the week (Monday)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> WeeklyScheduleResponse:
     """Get teacher's weekly schedule."""
     
