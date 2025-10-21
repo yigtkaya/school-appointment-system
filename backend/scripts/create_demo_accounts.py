@@ -70,7 +70,7 @@ def create_demo_accounts(db):
                 id=str(uuid.uuid4()),
                 user_id=user.id,
                 subject="Mathematics",  # Demo subject
-                department="Science"    # Demo department
+                branch="Science"        # Demo branch
             )
             db.add(teacher)
         

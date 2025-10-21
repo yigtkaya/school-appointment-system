@@ -21,7 +21,7 @@ def create_admin_user(db):
     if not admin:
         admin = User(
             email="admin@school.com",
-            hashed_password=get_password_hash("admin123"),
+            password_hash=get_password_hash("password123"),
             full_name="System Administrator",
             phone_number="+1234567890",
             role=UserRole.ADMIN,
@@ -30,7 +30,7 @@ def create_admin_user(db):
         db.add(admin)
         db.commit()
         db.refresh(admin)
-        print(f"✅ Created admin user: admin@school.com / admin123")
+        print(f"✅ Created admin user: admin@school.com / password123")
     else:
         print(f"ℹ️  Admin user already exists: admin@school.com")
 
@@ -50,7 +50,7 @@ def main():
         print("\n✅ Database initialization complete!")
         print("\n📝 Default Credentials:")
         print("   Email: admin@school.com")
-        print("   Password: admin123")
+        print("   Password: password123")
         print("\n⚠️  Please change the admin password after first login!")
 
     except Exception as e:
