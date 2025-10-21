@@ -1,4 +1,4 @@
-export { TeacherDashboard } from './TeacherDashboard';
+export { TeacherDashboard } from '../../pages/TeacherDashboard';
 export { DashboardHeader } from './DashboardHeader';
 export { DashboardTabs } from './DashboardTabs';
 export { AppointmentsList } from './AppointmentsList';

@@ -1,13 +1,11 @@
-import type { User } from '@/types'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import type { User } from '@/types/schemas'
 
 export interface RouterContext {
-  authState: {
-    token: string | null
-    user: User | null
+  authentication: {
     isAuthenticated: boolean
-    isLoading: boolean
-    error: string | null
+    user: User | null
+    token: string | null
   }
 }
 

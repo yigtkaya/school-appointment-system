@@ -105,6 +105,8 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
+export type AuthContext = ReturnType<typeof useAuthStore>;
+
 /**
  * Selector hooks for better performance and type safety
  */

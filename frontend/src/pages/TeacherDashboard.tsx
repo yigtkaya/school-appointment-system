@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useProfile, useTeacherAppointments, useTeacherSlots } from '@/hooks';
-import { DashboardHeader } from './DashboardHeader';
-import { DashboardTabs } from './DashboardTabs';
-import { AppointmentsList } from './AppointmentsList';
-import { SlotManagement } from './SlotManagement';
-import { ProfileSettings } from './ProfileSettings';
+import { DashboardHeader } from '../components/TeacherDashboard/DashboardHeader';
+import { DashboardTabs } from '../components/TeacherDashboard/DashboardTabs';
+import { AppointmentsList } from '../components/TeacherDashboard/AppointmentsList';
+import { SlotManagement } from '../components/TeacherDashboard/SlotManagement';
+import { ProfileSettings } from '../components/TeacherDashboard/ProfileSettings';
 
 type TabType = 'appointments' | 'slots' | 'profile';
 
