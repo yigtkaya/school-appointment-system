@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 class LoginRequest(BaseModel):
     """Login request model."""
-    email: EmailStr
+    identifier: str  # Can be email or full name
     password: str
  
 
@@ -46,12 +46,12 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """Login user and return access token."""
-    user = crud_user.get_by_email(db, credentials.email)
+    user = crud_user.get_by_email_or_name(db, credentials.identifier)
     
     if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Invalid email/name or password"
         )
     
     if not user.is_active:

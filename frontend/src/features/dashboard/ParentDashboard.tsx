@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { appointmentsAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
@@ -18,6 +19,7 @@ interface ParentDashboardProps {
 }
 
 export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardProps = {}) {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const [currentView, setCurrentView] = useState<ViewMode>('home')
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
@@ -51,7 +53,7 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
       <div className="w-full max-w-4xl mx-auto px-6">
         <div className="grid grid-cols-1 gap-8">
-          {/* Book New Appointment Card */}
+          {/* Yeni Randevu Al Kartı */}
           <Card 
             className="group hover:shadow-2xl transition-all duration-500 cursor-pointer border-2 border-dashed border-blue-200 hover:border-blue-400 hover:scale-105 animate-in fade-in slide-in-from-left-8 duration-700"
             onClick={() => {
@@ -63,16 +65,16 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-blue-200 transition-colors duration-300">
                 <Plus className="w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">Book New Appointment</h2>
-              <p className="text-gray-600 mb-6">Schedule a meeting with a teacher for your child</p>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">{t('appointments.book')}</h2>
+              <p className="text-gray-600 mb-6">{t('landing.step1Desc')}</p>
               <div className="flex items-center justify-center text-blue-600 font-medium">
-                Get Started
+                {t('landing.getStarted')}
                 <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
               </div>
             </CardContent>
           </Card>
 
-          {/* View Appointments Card */}
+          {/* Randevuları Görüntüle Kartı */}
           {/* <Card 
             className="group hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-105 animate-in fade-in slide-in-from-right-8 duration-700"
             onClick={() => setCurrentView('appointments')}
@@ -114,20 +116,20 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
             className="flex items-center gap-2 hover:bg-gray-100"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t('common.back')}
           </Button>
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Appointments</h1>
-          <p className="text-gray-600">Manage your scheduled meetings with teachers</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('appointments.title')}</h1>
+          <p className="text-gray-600">{t('dashboard.allAppointments')}</p>
         </div>
 
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              All Appointments
+              {t('appointments.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -151,35 +153,35 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
                       <div className="text-gray-500 flex items-center gap-4 mt-1">
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {formatDate(appointment.slot?.week_start_date)} at {formatTime(appointment.slot?.start_time)}
+                          {formatDate(appointment.slot?.week_start_date)} {t('appointments.schedule.at')} {formatTime(appointment.slot?.start_time)}
                         </span>
                         <span>•</span>
                         <span>{appointment.meeting_mode}</span>
                       </div>
                       {appointment.notes && (
                         <div className="text-gray-500 mt-2 text-sm">
-                          <strong>Notes:</strong> {appointment.notes}
+                          <strong>{t('appointments.notes')}:</strong> {appointment.notes}
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Badge className={getStatusBadgeColor(appointment.status)}>
-                      {appointment.status}
+                      {t(`appointments.status.${appointment.status}`)}
                     </Badge>
                     {appointment.status === 'pending' && (
                       <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                        Awaiting teacher confirmation
+                        {t('dashboard.pendingAppointments')}
                       </div>
                     )}
                     {appointment.status === 'pending' && (
                       <Button variant="destructive" size="sm">
-                        Cancel
+                        {t('appointments.cancel')}
                       </Button>
                     )}
                     {appointment.status === 'confirmed' && (
                       <Button variant="outline" size="sm">
-                        View Details
+                        {t('appointments.details')}
                       </Button>
                     )}
                   </div>
@@ -188,8 +190,8 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
               {!parentAppointments?.length && (
                 <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-                  <h3 className="text-xl font-medium text-gray-500 mb-2">No appointments yet</h3>
-                  <p className="text-gray-400 mb-6">Get started by booking your first appointment</p>
+                  <h3 className="text-xl font-medium text-gray-500 mb-2">{t('dashboard.noAppointments')}</h3>
+                  <p className="text-gray-400 mb-6">{t('landing.bookNowDesc')}</p>
                   <Button 
                     onClick={() => {
                       setCurrentView('booking')
@@ -198,7 +200,7 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
                     className="px-8"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Book Appointment
+                    {t('appointments.book')}
                   </Button>
                 </div>
               )}

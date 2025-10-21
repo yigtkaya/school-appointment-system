@@ -17,6 +17,19 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """Get user by email."""
         return db.query(User).filter(User.email == email).first()
     
+    def get_by_full_name(self, db: Session, full_name: str) -> Optional[User]:
+        """Get user by full name."""
+        return db.query(User).filter(User.full_name == full_name).first()
+    
+    def get_by_email_or_name(self, db: Session, identifier: str) -> Optional[User]:
+        """Get user by email or full name."""
+        # First try email
+        user = self.get_by_email(db, identifier)
+        if user:
+            return user
+        # If not found, try full name
+        return self.get_by_full_name(db, identifier)
+    
     def create_with_hashed_password(self, db: Session, user_in: UserCreate) -> User:
         """Create user with hashed password."""
         db_user = User(

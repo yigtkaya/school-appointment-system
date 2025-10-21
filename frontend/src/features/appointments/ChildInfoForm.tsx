@@ -14,7 +14,7 @@ interface ChildInfoFormProps {
   values: ChildInfoFormData
 }
 
-const YEARS = ['1', '2', '3', '4', '5', '6', '7', '8']
+const YEARS = ['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.']
 const CLASSES = ['A', 'B', 'C', 'D', 'E']
 
 export function ChildInfoForm({ register, errors, values }: ChildInfoFormProps) {
@@ -61,7 +61,7 @@ export function ChildInfoForm({ register, errors, values }: ChildInfoFormProps) 
             <option value="">{t('appointments.modal.selectYear')}</option>
             {YEARS.map((year) => (
               <option key={year} value={year}>
-                {t('appointments.modal.year')} {year}
+                {year} {t('appointments.modal.year')}
               </option>
             ))}
           </select>
