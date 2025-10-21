@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.teacher import Teacher
-from app.models.parent import Parent
 from app.core.security import get_password_hash
 from app.core.constants import UserRole
 
@@ -27,16 +26,10 @@ def create_demo_accounts(db):
             "role": UserRole.ADMIN
         },
         {
-            "email": "teacher@school.com", 
+            "email": "teacher@school.com",
             "password": "password123",
             "full_name": "Demo Teacher",
             "role": UserRole.TEACHER
-        },
-        {
-            "email": "parent@school.com",
-            "password": "password123", 
-            "full_name": "Demo Parent",
-            "role": UserRole.PARENT
         }
     ]
     
@@ -80,14 +73,6 @@ def create_demo_accounts(db):
                 department="Science"    # Demo department
             )
             db.add(teacher)
-            
-        elif account["role"] == UserRole.PARENT:
-            parent = Parent(
-                id=str(uuid.uuid4()),
-                user_id=user.id,
-                phone_number="+1234567890"  # Demo phone
-            )
-            db.add(parent)
         
         created_users.append(user)
         print(f"✅ Created {account['role']} user: {account['email']}")
@@ -109,7 +94,6 @@ def main():
         print("\n📝 Demo Account Credentials:")
         print("   📧 admin@school.com   🔑 password123  (Admin)")
         print("   📧 teacher@school.com 🔑 password123  (Teacher)")
-        print("   📧 parent@school.com  🔑 password123  (Parent)")
         print("\n⚠️  Please change passwords after first login!")
         
     except Exception as e:
