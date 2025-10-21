@@ -1,305 +1,151 @@
-# 🏫 School Appointment System - Backend API
+# Teacher-Parent Meeting Scheduler - Backend
 
-A production-ready FastAPI backend for managing weekly parent-teacher appointments with automated notifications and scheduling.
-
----
-
-## ✨ Features
-
-- **RESTful API** - FastAPI with automatic OpenAPI docs
-- **JWT Authentication** - Role-based access control (Admin, Teacher, Parent)
-- **Database** - PostgreSQL with SQLAlchemy ORM
-- **Background Jobs** - Celery + Redis for async tasks
-- **Email Notifications** - Automated appointment confirmations and reminders
-- **Calendar Integration** - iCal export and schedule views
-- **Docker Support** - Production-ready containerization
-- **Database Migrations** - Alembic for schema management
-
----
+FastAPI backend for the teacher-parent meeting scheduler system.
 
 ## 🚀 Quick Start
 
-### Development
+### Prerequisites
+- Python 3.9+
+- PostgreSQL 12+
+- pip or poetry
 
-```bash
-# 1. Setup
-cp .env.example .env
-make install
+### Installation
 
-# 2. Start dependencies
-make dev
+1. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-# 3. Run migrations
-make migrate
-make init-db  # Creates admin user
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# 4. Start services (in separate terminals)
-make run-api      # API on :8001
-make run-worker   # Celery worker
-make run-beat     # Celery scheduler
-```
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
-Access:
-- **API**: http://localhost:8001
-- **Docs**: http://localhost:8001/docs
-- **Flower**: http://localhost:5555 (run: `make run-flower`)
+4. **Run database migrations**
+   ```bash
+   alembic upgrade head
+   ```
 
-### Production
+5. **Start the development server**
+   ```bash
+   python main.py
+   ```
 
-```bash
-# Deploy full stack with Docker
-cp .env.production .env
-# Configure .env with production values
-make prod
-```
+   The API will be available at `http://localhost:8000`
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
-
----
+### API Documentation
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
 ## 📁 Project Structure
 
 ```
 backend/
-├── app/                  # Application code
-│   ├── api/             # API routes
-│   ├── core/            # Config, security, celery
-│   ├── crud/            # Database operations
-│   ├── models/          # SQLAlchemy models
-│   ├── schemas/         # Pydantic schemas
-│   ├── services/        # Business logic
-│   └── tasks/           # Celery background tasks
-├── deployment/          # Docker compose & Dockerfile
-├── scripts/             # Utility scripts
-├── alembic/             # Database migrations
-└── docs/                # Documentation
+├── app/
+│   ├── core/              # Core configuration and security
+│   │   ├── config.py      # Settings and configuration
+│   │   ├── security.py    # JWT and password utilities
+│   │   └── dependencies.py # Dependency injection
+│   ├── db/
+│   │   └── database.py    # Database connection and session
+│   ├── models/            # SQLAlchemy models
+│   │   ├── user.py
+│   │   ├── class_model.py
+│   │   ├── student.py
+│   │   ├── teacher_class.py
+│   │   ├── available_slot.py
+│   │   └── appointment.py
+│   ├── schemas/           # Pydantic schemas (to be implemented)
+│   ├── routers/           # API route handlers (to be implemented)
+│   └── __init__.py
+├── migrations/            # Alembic migrations
+│   ├── versions/
+│   └── env.py
+├── main.py               # FastAPI application entry point
+├── requirements.txt      # Python dependencies
+├── alembic.ini          # Alembic configuration
+├── .env.example         # Environment variables template
+└── README.md
 ```
 
----
+## 🗄️ Database
 
-## 🔧 Available Commands
+### Models
+- **User**: Teachers and admins with roles and authentication
+- **Class**: School classes (grade + section)
+- **Student**: Students in classes
+- **TeacherClass**: Many-to-many relationship between teachers and classes
+- **AvailableSlot**: Teacher availability time slots
+- **Appointment**: Scheduled meetings between teachers and parents
+
+### Running Migrations
+
+Create a new migration (auto-detect changes):
+```bash
+alembic revision --autogenerate -m "Description of changes"
+```
+
+Upgrade to latest version:
+```bash
+alembic upgrade head
+```
+
+Downgrade to previous version:
+```bash
+alembic downgrade -1
+```
+
+## 🔐 Authentication
+
+The API uses JWT (JSON Web Tokens) for authentication:
+- Teachers and admins authenticate via `/api/auth/login`
+- JWT tokens are included in request headers: `Authorization: Bearer <token>`
+- Role-based access control enforced on protected endpoints
+
+## 🐳 Docker
+
+### Using Docker Compose
 
 ```bash
-make help          # Show all commands
-
-# Development
-make dev           # Start PostgreSQL + Redis
-make run-api       # Start FastAPI server
-make run-worker    # Start Celery worker
-make run-beat      # Start Celery beat scheduler
-
-# Production
-make prod          # Deploy with Docker
-make stop          # Stop all services
-make logs          # View logs
-
-# Database
-make migrate       # Run migrations
-make migrate-create MSG="description"  # Create migration
-make init-db       # Initialize with admin user
-
-# Testing
-make test          # Run tests
+docker-compose up -d
 ```
 
----
+This starts:
+- FastAPI backend on `http://localhost:8000`
+- PostgreSQL database on `localhost:5432`
 
-## 🔐 Default Credentials
+### Environment Variables (docker-compose)
 
-After running `make init-db`:
-
+Create `.env.docker` file:
 ```
-Email: admin@school.com
-Password: admin123
+DATABASE_URL=postgresql://user:password@postgres:5432/school_appointment_db
+SECRET_KEY=your-secret-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+DEBUG=False
 ```
-
-⚠️ **Change password immediately in production!**
-
----
-
-## 📊 API Endpoints
-
-### Authentication
-- `POST /auth/register` - Register user
-- `POST /auth/login` - Login
-
-### Teachers
-- `GET /api/v1/teachers` - List teachers
-- `POST /api/v1/teachers` - Create teacher (admin)
-- `GET /api/v1/teachers/{id}` - Get teacher details
-
-### Parents
-- `GET /api/v1/parents` - List parents
-- `POST /api/v1/parents` - Create parent (admin)
-- `GET /api/v1/parents/me` - Get own profile
-
-### Time Slots
-- `GET /api/v1/slots` - List available slots
-- `POST /api/v1/slots` - Create slot (teacher/admin)
-- `POST /api/v1/slots/bulk` - Bulk create slots
-
-### Appointments
-- `POST /api/v1/appointments/book` - Book appointment (parent)
-- `GET /api/v1/appointments` - List appointments
-- `PUT /api/v1/appointments/{id}/status` - Update status
-- `DELETE /api/v1/appointments/{id}` - Cancel appointment
-
-### Calendar
-- `GET /api/v1/calendar/daily/{date}` - Daily schedule
-- `GET /api/v1/calendar/monthly/{year}/{month}` - Monthly view
-- `GET /api/v1/calendar/export/ical` - Export to iCal
-
-### Notifications
-- `GET /api/v1/notifications` - List notifications (admin)
-- `POST /api/v1/notifications/send` - Send notification (admin)
-
-Full API documentation: http://localhost:8001/docs
-
----
-
-## 🔄 Background Tasks
-
-Automated tasks run via Celery Beat:
-
-| Task | Schedule | Description |
-|------|----------|-------------|
-| **Appointment Reminders** | Hourly | 24h advance notifications |
-| **Weekly Slot Reset** | Sunday 00:00 | Clean old unbooked slots |
-| **Status Updates** | Daily 01:00 | Mark completed appointments |
-| **Cleanup** | Daily 02:00 | Remove old notifications (30d) |
-
----
 
 ## 🧪 Testing
 
-```bash
-# Run tests
-make test
+(To be implemented)
 
-# With coverage
-pytest --cov=app --cov-report=html
-```
+## 📝 Notes
 
----
+- All times are stored in UTC
+- CORS is currently configured to allow all origins (update in production)
+- Password hashing uses bcrypt
+- JWT tokens expire after 30 minutes (configurable)
 
-## 📚 Documentation
+## 📚 Additional Resources
 
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide
-- **[docs/CELERY_SETUP.md](docs/CELERY_SETUP.md)** - Celery configuration
-- **[docs/QUICKSTART_CELERY.md](docs/QUICKSTART_CELERY.md)** - Quick Celery guide
-- **[API Docs](http://localhost:8001/docs)** - Auto-generated OpenAPI docs
-
----
-
-## 🛠️ Tech Stack
-
-- **FastAPI** - Modern Python web framework
-- **PostgreSQL** - Production database
-- **SQLAlchemy** - ORM
-- **Pydantic** - Data validation
-- **Celery** - Background task queue
-- **Redis** - Message broker & cache
-- **Alembic** - Database migrations
-- **Docker** - Containerization
-- **Resend** - Email delivery
-
----
-
-## 🔒 Security
-
-- JWT token authentication
-- Password hashing with bcrypt
-- Role-based access control (RBAC)
-- CORS configuration
-- SQL injection protection via SQLAlchemy
-- Input validation via Pydantic
-- Environment variable configuration
-
----
-
-## 📈 Production Ready
-
-✅ Multi-stage Docker builds
-✅ Health check endpoints
-✅ Database connection pooling
-✅ Graceful shutdown handling
-✅ Structured logging
-✅ Error handling middleware
-✅ Database migrations
-✅ Background job processing
-✅ Monitoring with Flower
-
----
-
-## 🆘 Troubleshooting
-
-### Database connection failed
-```bash
-# Check if PostgreSQL is running
-docker ps | grep postgres
-
-# Test connection
-make db-shell
-```
-
-### Celery tasks not executing
-```bash
-# Check Redis
-docker exec -it school-redis-dev redis-cli ping
-
-# Check worker logs
-docker logs school-celery-worker
-```
-
-### Port already in use
-```bash
-# Change port in .env
-PORT=8001
-
-# Or kill process using port
-lsof -ti:8000 | xargs kill -9
-```
-
----
-
-## 📝 Environment Variables
-
-Key variables (see `.env.example` for full list):
-
-```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-
-# Security
-SECRET_KEY=your-secret-key-here
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Email
-RESEND_API_KEY=your_api_key
-SENDER_EMAIL=noreply@school.com
-```
-
----
-
-## 🤝 Contributing
-
-1. Create feature branch
-2. Make changes
-3. Run tests: `make test`
-4. Create pull request
-
----
-
-## 📄 License
-
-Private - All rights reserved.
-
----
-
-## 🎉 You're Ready!
-
-Start building amazing appointment scheduling experiences! 🚀
-
-For questions or issues, check the [documentation](DEPLOYMENT.md) or API docs at `/docs`.
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [SQLAlchemy Documentation](https://www.sqlalchemy.org/)
+- [Alembic Documentation](https://alembic.sqlalchemy.org/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)

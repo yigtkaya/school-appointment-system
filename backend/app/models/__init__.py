@@ -1,15 +1,2 @@
-"""Database models."""
-
-from app.models.user import User
-from app.models.teacher import Teacher
-from app.models.slot import AvailableSlot
-from app.models.appointment import Appointment
-from app.models.notification import Notification
-
-__all__ = [
-    "User",
-    "Teacher",
-    "AvailableSlot",
-    "Appointment",
-    "Notification",
-]
+# Import models for lazy loading and re-export
+# These will be imported when needed to avoid circular imports

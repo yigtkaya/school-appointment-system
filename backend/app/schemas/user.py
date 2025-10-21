@@ -1,50 +1,46 @@
-"""User schemas for request/response validation."""
-
-from typing import Optional
-from datetime import datetime
-
 from pydantic import BaseModel, EmailStr
-
-from app.core.constants import UserRole
+from datetime import datetime
+from typing import Optional
+from app.core.dependencies import UserRole
 
 
 class UserBase(BaseModel):
     """Base user schema."""
+    name: str
     email: EmailStr
-    full_name: Optional[str] = None
-    role: UserRole
+    branch: Optional[str] = None
 
 
 class UserCreate(UserBase):
-    """User creation schema."""
+    """Schema for creating a user."""
     password: str
 
 
 class UserUpdate(BaseModel):
-    """User update schema."""
-    full_name: Optional[str] = None
+    """Schema for updating a user."""
+    name: Optional[str] = None
+    branch: Optional[str] = None
     password: Optional[str] = None
 
 
 class UserResponse(UserBase):
-    """User response schema."""
-    id: str
-    is_active: bool
+    """Schema for user response."""
+    id: int
+    role: UserRole
+    require_approval: int
     created_at: datetime
-    updated_at: datetime
     
     class Config:
         from_attributes = True
 
 
-class TokenResponse(BaseModel):
+class Token(BaseModel):
     """Token response schema."""
     access_token: str
     token_type: str
-    user: UserResponse
 
 
-class TokenData(BaseModel):
-    """Token data schema."""
-    sub: Optional[str] = None
-    exp: Optional[int] = None
+class LoginRequest(BaseModel):
+    """Login request schema."""
+    email: EmailStr
+    password: str

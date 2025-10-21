@@ -1,43 +1,42 @@
-"""Application configuration settings."""
-
 from pydantic_settings import BaseSettings
-from functools import lru_cache
+from typing import Optional, List
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/school_appointment_db"
     
-    # Security
-    SECRET_KEY: str
+    # JWT
+    SECRET_KEY: str = "your-secret-key-change-this-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Server
-    DEBUG: bool = False
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    DEBUG: bool = True
+    API_V1_STR: str = "/api"
+    PROJECT_NAME: str = "Teacher-Parent Meeting Scheduler"
     
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # CORS
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5174",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+    CORS_ALLOW_CREDENTIALS: bool = True
+    CORS_ALLOW_METHODS: List[str] = ["*"]
+    CORS_ALLOW_HEADERS: List[str] = ["*"]
     
-    # Email
-    RESEND_API_KEY: str = ""
-    SENDER_EMAIL: str = "noreply@example.com"
-    
-    # Twilio
-    TWILIO_ACCOUNT_SID: str = ""
-    TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_WHATSAPP_NUMBER: str = ""
+    # Security
+    ALLOWED_HOSTS: List[str] = ["*"]
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
     
     class Config:
         env_file = ".env"
         case_sensitive = True
 
 
-@lru_cache()
-def get_settings() -> Settings:
-    """Get cached settings instance."""
-    return Settings()
+settings = Settings()

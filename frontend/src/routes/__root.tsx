@@ -1,11 +1,13 @@
-import type { User } from '@/types/api'
+import type { User } from '@/types'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 
 export interface RouterContext {
-  auth: {
-    isAuthenticated: boolean
+  authState: {
+    token: string | null
     user: User | null
+    isAuthenticated: boolean
+    isLoading: boolean
+    error: string | null
   }
 }
 
@@ -19,7 +21,6 @@ function RootComponent() {
       <div className="min-h-screen bg-gray-50">
         <Outlet />
       </div>
-      <TanStackRouterDevtools />
     </>
   )
 }

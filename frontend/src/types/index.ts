@@ -1,0 +1,48 @@
+// Legacy types for backwards compatibility
+// NOTE: Prefer importing from './schemas.ts' for new code
+// This file uses Zod for runtime validation and type safety
+
+export { 
+  // Schema validators
+  RegisterSchema,
+  LoginSchema,
+  TokenResponseSchema,
+  UserSchema,
+  CreateUserSchema,
+  UpdateUserSchema,
+  ClassSchema,
+  CreateClassSchema,
+  UpdateClassSchema,
+  StudentSchema,
+  CreateStudentSchema,
+  UpdateStudentSchema,
+  AvailableSlotSchema,
+  CreateAvailableSlotSchema,
+  UpdateAvailableSlotSchema,
+  AppointmentSchema,
+  CreateAppointmentSchema,
+  UpdateAppointmentSchema,
+  AppointmentFilterSchema,
+  ClassFilterSchema,
+  // Type exports
+  type Register,
+  type Login,
+  type TokenResponse,
+  type User,
+  type CreateUser,
+  type UpdateUser,
+  type Class,
+  type CreateClass,
+  type UpdateClass,
+  type Student,
+  type CreateStudent,
+  type UpdateStudent,
+  type AvailableSlot,
+  type CreateAvailableSlot,
+  type UpdateAvailableSlot,
+  type Appointment,
+  type CreateAppointment,
+  type UpdateAppointment,
+  type AppointmentFilter,
+  type ClassFilter,
+} from './schemas';

@@ -1,133 +1,160 @@
-import { API_BASE_URL } from '@/lib/utils'
-import type { APIError } from '@/types/api'
+import { API_BASE_URL, API_TIMEOUT } from '../lib/config';
 
-export class APIClient {
-  private baseURL: string
-  private token: string | null = null
+export class APIError extends Error {
+  status: number;
+  data: unknown;
 
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL
-    this.loadToken()
-  }
-
-  private loadToken(): void {
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token')
-    }
-  }
-
-  setToken(token: string): void {
-    this.token = token
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token)
-    }
-  }
-
-  clearToken(): void {
-    this.token = null
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token')
-    }
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`
-
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    }
-
-    // Add authorization header if token exists
-    if (this.token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${this.token}`,
-      }
-    }
-
-    try {
-      const response = await fetch(url, config)
-
-      // Handle different response types
-      const contentType = response.headers.get('content-type')
-      let data
-
-      if (contentType?.includes('application/json')) {
-        data = await response.json()
-      } else {
-        data = await response.text()
-      }
-
-      if (!response.ok) {
-        // Handle specific error cases
-        if (response.status === 401) {
-          this.clearToken()
-          // Redirect to login or trigger auth state update
-          window.dispatchEvent(new CustomEvent('auth:logout'))
-        }
-
-        const error: APIError = data
-        throw new Error(typeof error.detail === 'string' ? error.detail : 'An error occurred')
-      }
-
-      return data
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error('Network error occurred')
-    }
-  }
-
-  // HTTP Methods
-async get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T> {
-  const searchParams = params
-    ? `?${new URLSearchParams(
-        Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
-          acc[key] = String(value)
-          return acc
-        }, {})
-      )}`
-    : ''
-
-  return this.request<T>(`${endpoint}${searchParams}`)
-}
-
-
-  async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'DELETE',
-    })
+  constructor(status: number, data: unknown, message: string) {
+    super(message);
+    this.name = 'APIError';
+    this.status = status;
+    this.data = data;
   }
 }
 
-// Create a singleton instance
-export const apiClient = new APIClient()
+interface FetchOptions extends RequestInit {
+  timeout?: number;
+  token?: string;
+}
+
+/**
+ * Make API requests using native Fetch API
+ */
+async function fetchAPI<T>(
+  endpoint: string,
+  options: FetchOptions = {},
+): Promise<T> {
+  const { timeout = API_TIMEOUT, token, ...fetchOptions } = options;
+
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  // Set default headers
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Merge with provided headers if any
+  if (fetchOptions.headers) {
+    if (typeof fetchOptions.headers === 'object' && !Array.isArray(fetchOptions.headers)) {
+      Object.assign(headers, fetchOptions.headers);
+    }
+  }
+
+  // Add auth token if provided
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // Handle non-OK responses
+    if (!response.ok) {
+      let errorData: unknown;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { detail: response.statusText };
+      }
+
+      throw new APIError(
+        response.status,
+        errorData,
+        `API Error: ${response.status}`,
+      );
+    }
+
+    // Parse response
+    const data = await response.json();
+    return data as T;
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof APIError) {
+      throw error;
+    }
+
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new APIError(0, null, 'Network error. Please check your connection.');
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * GET request
+ */
+export function apiGet<T>(endpoint: string, token?: string): Promise<T> {
+  return fetchAPI<T>(endpoint, {
+    method: 'GET',
+    token,
+  });
+}
+
+/**
+ * POST request
+ */
+export function apiPost<T>(
+  endpoint: string,
+  data?: Record<string, unknown>,
+  token?: string,
+): Promise<T> {
+  return fetchAPI<T>(endpoint, {
+    method: 'POST',
+    body: data ? JSON.stringify(data) : undefined,
+    token,
+  });
+}
+
+/**
+ * PUT request
+ */
+export function apiPut<T>(
+  endpoint: string,
+  data?: Record<string, unknown>,
+  token?: string,
+): Promise<T> {
+  return fetchAPI<T>(endpoint, {
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined,
+    token,
+  });
+}
+
+/**
+ * PATCH request
+ */
+export function apiPatch<T>(
+  endpoint: string,
+  data?: Record<string, unknown>,
+  token?: string,
+): Promise<T> {
+  return fetchAPI<T>(endpoint, {
+    method: 'PATCH',
+    body: data ? JSON.stringify(data) : undefined,
+    token,
+  });
+}
+
+/**
+ * DELETE request
+ */
+export function apiDelete<T = void>(endpoint: string, token?: string): Promise<T> {
+  return fetchAPI<T>(endpoint, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export default fetchAPI;

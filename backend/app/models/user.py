@@ -1,29 +1,21 @@
-"""User model."""
-
+from sqlalchemy import Column, Integer, String, DateTime, Enum
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Boolean, Enum as SQLEnum
-from sqlalchemy.orm import relationship
-
-from app.db.base import Base
-from app.core.constants import UserRole
-
+from app.db.database import Base
+from app.core.dependencies import UserRole
 
 class User(Base):
-    """User model for all user types (admin, teacher)."""
+    """User model for teachers and admins."""
     
     __tablename__ = "users"
     
-    id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    full_name = Column(String, nullable=True)
     password_hash = Column(String, nullable=False)
-    role = Column(SQLEnum(UserRole), nullable=False, index=True)
-    is_active = Column(Boolean, default=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    branch = Column(String, nullable=True)  # e.g., "Primary", "Secondary"
+    role = Column(Enum(UserRole), default=UserRole.TEACHER, nullable=False)
+    require_approval = Column(Integer, default=False)  # Boolean as integer
+    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc), nullable=False)
     
-    # Relationships
-    teacher = relationship("Teacher", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    
-    def __repr__(self) -> str:
-        return f"<User {self.email} ({self.role})>"
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email}, role={self.role})>"

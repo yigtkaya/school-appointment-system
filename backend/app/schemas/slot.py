@@ -1,262 +1,38 @@
-"""Available slot schemas for request/response validation."""
-
-from datetime import datetime, date, time
+from pydantic import BaseModel
+from datetime import datetime, time
 from typing import Optional
-from pydantic import BaseModel, Field, validator
-
-from app.schemas.teacher import TeacherWithUser
 
 
-class SlotBase(BaseModel):
-    """Base slot schema."""
-    
-    teacher_id: str = Field(..., description="Teacher ID")
-    day_of_week: int = Field(..., ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
-    start_time: time = Field(..., description="Start time of the slot")
-    end_time: time = Field(..., description="End time of the slot")
-    week_start_date: date = Field(..., description="Start date of the week (Monday)")
-    
-    @validator('end_time')
-    def end_time_after_start_time(cls, v, values):
-        """Validate that end time is after start time."""
-        if 'start_time' in values and v <= values['start_time']:
-            raise ValueError('End time must be after start time')
-        return v
-    
-    @validator('week_start_date')
-    def week_start_is_monday(cls, v):
-        """Validate that week_start_date is a Monday."""
-        if v.weekday() != 0:  # Monday is 0
-            raise ValueError('Week start date must be a Monday')
-        return v
-
-
-class SlotCreate(SlotBase):
-    """Schema for creating a slot."""
-    pass
-
-
-class SlotUpdate(BaseModel):
-    """Schema for updating a slot."""
-    
-    day_of_week: Optional[int] = Field(None, ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
-    start_time: Optional[time] = Field(None, description="Start time of the slot")
-    end_time: Optional[time] = Field(None, description="End time of the slot")
-    week_start_date: Optional[date] = Field(None, description="Start date of the week (Monday)")
-    
-    @validator('end_time')
-    def end_time_after_start_time(cls, v, values):
-        """Validate that end time is after start time."""
-        if v and 'start_time' in values and values['start_time'] and v <= values['start_time']:
-            raise ValueError('End time must be after start time')
-        return v
-    
-    @validator('week_start_date')
-    def week_start_is_monday(cls, v):
-        """Validate that week_start_date is a Monday."""
-        if v and v.weekday() != 0:  # Monday is 0
-            raise ValueError('Week start date must be a Monday')
-        return v
-
-
-class SlotResponse(SlotBase):
-    """Schema for slot response."""
-    
-    id: str
-    is_booked: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
-
-
-class SlotWithTeacher(SlotResponse):
-    """Schema for slot response with teacher information."""
-    
-    teacher: TeacherWithUser
-    
-    class Config:
-        from_attributes = True
-
-
-class SlotListResponse(BaseModel):
-    """Schema for slot list response."""
-    
-    slots: list[SlotWithTeacher]
-    total: int
-    skip: int
-    limit: int
-
-
-class BulkSlotCreate(BaseModel):
-    """Schema for creating multiple slots."""
-    
-    teacher_id: str = Field(..., description="Teacher ID")
-    week_start_date: date = Field(..., description="Start date of the week (Monday)")
-    time_slots: list[dict] = Field(
-        ..., 
-        description="List of time slots with day_of_week, start_time, end_time",
-        example=[
-            {"day_of_week": 0, "start_time": "09:00", "end_time": "10:00"},
-            {"day_of_week": 1, "start_time": "14:00", "end_time": "15:00"}
-        ]
-    )
-    
-    @validator('week_start_date')
-    def week_start_is_monday(cls, v):
-        """Validate that week_start_date is a Monday."""
-        if v.weekday() != 0:  # Monday is 0
-            raise ValueError('Week start date must be a Monday')
-        return v
-
-
-class SlotAvailabilityQuery(BaseModel):
-    """Schema for querying slot availability."""
-    
-    teacher_id: Optional[str] = Field(None, description="Filter by teacher ID")
-    week_start_date: Optional[date] = Field(None, description="Filter by week start date")
-    day_of_week: Optional[int] = Field(None, ge=0, le=6, description="Filter by day of week")
-    available_only: bool = Field(True, description="Show only available slots")
-
-
-class WeeklyScheduleResponse(BaseModel):
-    """Schema for weekly schedule response."""
-    
-    teacher_id: str
-    week_start_date: date
-    slots_by_day: dict[int, list[SlotWithTeacher]] = Field(
-        description="Slots grouped by day of week"
-    )
-    total_slots: int
-    available_slots: int
-    booked_slots: int
-
-
-class DailyScheduleResponse(BaseModel):
-    """Schema for daily schedule response."""
-    
-    date: date
-    day_name: str
+class AvailableSlotBase(BaseModel):
+    """Base available slot schema."""
     day_of_week: int
-    slots: list[SlotWithTeacher]
-    appointments: list[dict] = Field(description="Appointments for this day")
-    total_slots: int
-    available_slots: int
-    booked_slots: int
-    suggested_times: list[dict] = Field(description="Suggested available time slots")
+    start_time: time
+    end_time: time
+    timezone: str = "UTC"
+    is_active: bool = True
 
 
-class MonthlyCalendarResponse(BaseModel):
-    """Schema for monthly calendar response."""
+class AvailableSlotCreate(AvailableSlotBase):
+    """Schema for creating an available slot."""
+    teacher_id: int
+    date: Optional[datetime] = None
+
+
+class AvailableSlotUpdate(BaseModel):
+    """Schema for updating an available slot."""
+    day_of_week: Optional[int] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    timezone: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class AvailableSlotResponse(AvailableSlotBase):
+    """Schema for available slot response."""
+    id: int
+    teacher_id: int
+    date: Optional[datetime] = None
+    created_at: datetime
     
-    year: int
-    month: int
-    month_name: str
-    weeks: list[dict] = Field(description="Calendar weeks with days")
-    total_slots: int
-    total_appointments: int
-    teacher_id: Optional[str] = None
-
-
-class CalendarExportResponse(BaseModel):
-    """Schema for calendar export response."""
-    
-    filename: str
-    content_type: str
-    content: str
-
-
-class TimeSlotSuggestion(BaseModel):
-    """Schema for time slot suggestions."""
-    
-    date: date
-    suggestions: list[dict] = Field(description="Available time slot suggestions")
-    existing_slots_count: int
-    conflicts_checked: int
-
-
-class EnhancedWeeklyScheduleResponse(BaseModel):
-    """Enhanced weekly schedule with more details."""
-    
-    teacher_id: str
-    teacher_name: str
-    week_start_date: date
-    week_end_date: date
-    days: list[dict] = Field(description="Daily schedules for the week")
-    summary: dict = Field(description="Week summary statistics")
-    time_range: dict = Field(description="Earliest and latest times")
-
-
-class SmartSlotCreate(BaseModel):
-    """Schema for smart slot creation - simple and intuitive."""
-    
-    teacher_id: str = Field(..., description="Teacher ID")
-    days_of_week: list[int] = Field(..., description="Days of week (0=Monday, 6=Sunday)")
-    start_time: time = Field(..., description="Start time of availability block")
-    end_time: time = Field(..., description="End time of availability block")
-    meeting_duration_minutes: int = Field(30, ge=15, le=120, description="Duration of each meeting in minutes")
-    week_start_date: date = Field(..., description="Start date of the week (Monday)")
-    
-    @validator('end_time')
-    def end_time_after_start_time(cls, v, values):
-        """Validate that end time is after start time."""
-        if 'start_time' in values and v <= values['start_time']:
-            raise ValueError('End time must be after start time')
-        return v
-    
-    @validator('week_start_date')
-    def week_start_is_monday(cls, v):
-        """Validate that week_start_date is a Monday."""
-        if v.weekday() != 0:  # Monday is 0
-            raise ValueError('Week start date must be a Monday')
-        return v
-    
-    @validator('days_of_week')
-    def valid_days(cls, v):
-        """Validate days of week."""
-        if not v:
-            raise ValueError('At least one day must be selected')
-        for day in v:
-            if day < 0 or day > 6:
-                raise ValueError('Days must be between 0 (Monday) and 6 (Sunday)')
-        return v
-
-
-class SmartSlotPreview(BaseModel):
-    """Schema for smart slot preview before creation."""
-    
-    total_slots: int
-    slots_per_day: int
-    meeting_duration_minutes: int
-    days: list[str]
-    time_range: str
-    total_hours: float
-    preview_slots: list[dict] = Field(description="Preview of slots to be created")
-
-
-class AdvancedBulkSlotCreate(BaseModel):
-    """Advanced schema for creating multiple slots with patterns."""
-    
-    teacher_id: str = Field(..., description="Teacher ID")
-    week_start_date: date = Field(..., description="Start date of the week (Monday)")
-    slot_pattern: dict = Field(
-        ...,
-        description="Pattern for creating slots",
-        example={
-            "days": [0, 1, 2, 3, 4],  # Monday to Friday
-            "start_time": "09:00",
-            "end_time": "17:00", 
-            "slot_duration_minutes": 30,
-            "break_duration_minutes": 15,
-            "lunch_break": {"start": "12:00", "end": "13:00"},
-            "exclude_times": [{"start": "10:30", "end": "10:45"}]
-        }
-    )
-    
-    @validator('week_start_date')
-    def week_start_is_monday(cls, v):
-        """Validate that week_start_date is a Monday."""
-        if v.weekday() != 0:  # Monday is 0
-            raise ValueError('Week start date must be a Monday')
-        return v
+    class Config:
+        from_attributes = True
