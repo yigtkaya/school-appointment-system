@@ -70,7 +70,9 @@ function LandingPage() {
                 <a href="/parent">
                   <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white text-base font-semibold px-8 group shadow-lg">
                     <Calendar className="mr-2 h-5 w-5" />
+                    <a href="/parent">  
                     Şimdi Randevu Al
+                    </a>
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </a>
