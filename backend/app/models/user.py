@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Enum, Boolean
 from datetime import datetime
 from app.db.database import Base
-from app.core.dependencies import UserRole
+from app.core.enums import UserRole
 
 class User(Base):
     """User model for teachers and admins."""
@@ -14,8 +14,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     branch = Column(String, nullable=True)  # e.g., "Primary", "Secondary"
     role = Column(Enum(UserRole), default=UserRole.TEACHER, nullable=False)
-    require_approval = Column(Integer, default=False)  # Boolean as integer
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc), nullable=False)
+    require_approval = Column(Boolean, default=False)  # Boolean field
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, role={self.role})>"

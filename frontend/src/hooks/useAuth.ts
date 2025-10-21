@@ -36,8 +36,7 @@ export function useRegisterMutation(
     {
       email: string;
       password: string;
-      first_name: string;
-      last_name: string;
+      name: string;
       role: 'teacher' | 'parent';
     }
   >,

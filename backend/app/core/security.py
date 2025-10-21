@@ -4,8 +4,12 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing with bcrypt as primary, argon2 as fallback
+pwd_context = CryptContext(
+    schemes=["bcrypt", "argon2"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+)
 
 # JWT settings
 ALGORITHM = settings.ALGORITHM
@@ -15,11 +19,25 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against its hash."""
+    # Ensure password is encoded properly for bcrypt (max 72 bytes)
+    if isinstance(plain_password, str):
+        plain_password = plain_password.encode('utf-8')
+    
+    if isinstance(plain_password, bytes) and len(plain_password) > 72:
+        plain_password = plain_password[:72]
+    
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """Generate hash for a password."""
+    # Ensure password is encoded properly for bcrypt (max 72 bytes)
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    
     return pwd_context.hash(password)
 
 

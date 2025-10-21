@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.gzip import GZIPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from app.core.config import settings
 from app.core.middleware import RateLimitMiddleware, ValidationMiddleware
 from app.db.database import engine, Base
@@ -24,7 +24,7 @@ app.add_middleware(
 )
 
 # 2. GZIP Compression
-app.add_middleware(GZIPMiddleware, minimum_size=1000)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # 3. CORS Middleware
 app.add_middleware(
@@ -51,28 +51,6 @@ app.include_router(classes.router)
 app.include_router(slots.router)
 app.include_router(appointments.router)
 app.include_router(admin.router)
-
-
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {"message": "Welcome to Teacher-Parent Meeting Scheduler API"}
-
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "ok"}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG,
-    )
 
 
 @app.get("/")
