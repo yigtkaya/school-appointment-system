@@ -45,8 +45,8 @@ export function SlotDetailsModal({ slotId, open, onClose }: SlotDetailsModalProp
   const { data: appointmentsData } = useTeacherTodaysAppointments(slot?.teacher_id || '')
   
   // Find the appointment that matches this slot
-  const slotAppointment = appointmentsData?.appointments?.find(
-    appointment => appointment.slot_id === slotId
+  const slotAppointment = appointmentsData?.find(
+    (appointment: { slot_id: string }) => appointment.slot_id === slotId
   )
 
   const {

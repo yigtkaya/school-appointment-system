@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Clock } from 'lucide-react'
 import type { AvailableSlot } from '@/types/api'
 import { useTeacherSchedule } from '@/hooks/slots'
@@ -10,9 +11,6 @@ interface SlotSelectorProps {
   weekStartDate?: string
 }
 
-const DAYS_OF_WEEK = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-]
 
 export function SlotSelector({ 
   teacherId, 
@@ -20,10 +18,16 @@ export function SlotSelector({
   onSlotSelect, 
   weekStartDate 
 }: SlotSelectorProps) {
+  const { t } = useTranslation()
   const [currentWeekStart, setCurrentWeekStart] = useState(
     weekStartDate || getCurrentWeekStart()
   )
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+
+  const DAYS_OF_WEEK = [
+    t('common.days.monday'), t('common.days.tuesday'), t('common.days.wednesday'), 
+    t('common.days.thursday'), t('common.days.friday'), t('common.days.saturday'), t('common.days.sunday')
+  ]
 
   const { data: scheduleData, isLoading, error } = useTeacherSchedule(teacherId, currentWeekStart)
 
@@ -68,12 +72,12 @@ export function SlotSelector({
     return (
       <div className="text-center py-12">
         <Clock className="w-12 h-12 mx-auto mb-4 text-red-300" />
-        <h3 className="text-lg font-medium text-red-600 mb-2">Error Loading Schedule</h3>
+        <h3 className="text-lg font-medium text-red-600 mb-2">{t('appointments.schedule.errorLoadingSchedule')}</h3>
         <p className="text-gray-600">
-          Failed to load available time slots. Please try again.
+          {t('appointments.schedule.failedToLoadSlots')}
         </p>
         <p className="text-sm text-gray-500 mt-4">
-          {error instanceof Error ? error.message : 'Unknown error'}
+          {error instanceof Error ? error.message : t('appointments.schedule.unknownError')}
         </p>
       </div>
     )
@@ -83,9 +87,9 @@ export function SlotSelector({
     return (
       <div className="text-center py-12">
         <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <h3 className="text-lg font-medium text-gray-600 mb-2">No Schedule Available</h3>
+        <h3 className="text-lg font-medium text-gray-600 mb-2">{t('appointments.schedule.noScheduleAvailable')}</h3>
         <p className="text-gray-600">
-          No schedule data found for this teacher this week.
+          {t('appointments.schedule.noScheduleFound')}
         </p>
       </div>
     )
@@ -149,15 +153,15 @@ export function SlotSelector({
         ) : (
           <div className="text-center py-12 text-gray-500">
             <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>No available slots for {selectedDayName}</p>
+            <p>{t('appointments.schedule.noAvailableSlots', { day: selectedDayName })}</p>
           </div>
         )}
 
         {selectedSlot && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="font-medium text-blue-900 mb-1">Selected Time</div>
+            <div className="font-medium text-blue-900 mb-1">{t('appointments.schedule.selectedTime')}</div>
             <div className="text-blue-800">
-              <span className="font-medium">{selectedDayName}</span> at <span className="font-mono">{formatTimeRange(selectedSlot.start_time, selectedSlot.end_time)}</span>
+              <span className="font-medium">{selectedDayName}</span> {t('appointments.schedule.at')} <span className="font-mono">{formatTimeRange(selectedSlot.start_time, selectedSlot.end_time)}</span>
             </div>
           </div>
         )}
@@ -184,7 +188,7 @@ export function SlotSelector({
             {formatWeekRange(scheduleData?.week_start_date, getWeekEndDate(scheduleData?.week_start_date))}
           </div>
           <div className="text-sm text-gray-500">
-            {scheduleData?.available_slots || 0} available slots
+            {t('appointments.schedule.availableSlots', { count: scheduleData?.available_slots || 0 })}
           </div>
         </div>
         
@@ -225,8 +229,8 @@ export function SlotSelector({
               </div>
               <div className={`text-sm mt-2 font-medium ${availableSlots.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                 {availableSlots.length > 0 
-                  ? `${availableSlots.length} slots`
-                  : 'No slots'
+                  ? `${availableSlots.length} ${t('appointments.schedule.slots')}`
+                  : t('appointments.schedule.noSlots')
                 }
               </div>
             </button>

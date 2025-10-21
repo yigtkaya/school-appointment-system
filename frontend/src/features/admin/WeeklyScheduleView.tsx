@@ -18,6 +18,7 @@ import { useTeachers, useSlots, useTeacherByUserId } from '@/hooks'
 import { useTeacherTodaysAppointments } from '@/hooks/appointments'
 import { useScheduleFilterStore } from '@/stores/admin'
 import { useAuthStore, useIsTeacher } from '@/stores/auth'
+import { t } from 'i18next'
 
 enum WeekDay {
   MONDAY = 0,
@@ -100,8 +101,8 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
   const handleSlotClick = (slot: AvailableSlot) => {
     if (slot.is_booked) {
       // Find the appointment for this slot
-      const appointment = appointmentsData?.appointments?.find(
-        appointment => appointment.slot_id === slot.id
+      const appointment = appointmentsData?.find(
+        (appointment: { slot_id: string }) => appointment.slot_id === slot.id
       )
       if (appointment) {
         setSelectedAppointmentId(appointment.id)
@@ -335,7 +336,7 @@ export function WeeklyScheduleView({ selectedTeacher, onTeacherChange }: WeeklyS
                                     variant={slot.is_booked ? "destructive" : "default"}
                                     className="text-xs"
                                   >
-                                    {slot.is_booked ? 'Booked' : 'Available'}
+                                    {slot.is_booked ? t('slot.booked') : t('slot.available')}
                                   </Badge>
                                 </div>
                               </div>

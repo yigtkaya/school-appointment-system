@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -22,17 +23,19 @@ interface AppointmentDetailsModalProps {
   onClose: () => void
 }
 
-const updateNotesSchema = z.object({
-  notes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
-})
-
-type UpdateNotesFormData = z.infer<typeof updateNotesSchema>
-
 export function AppointmentDetailsModal({ appointmentId, open, onClose }: AppointmentDetailsModalProps) {
+  const { t } = useTranslation()
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const { user } = useAuthStore()
   const { data: appointment, isLoading } = useAppointmentById(appointmentId)
   const updateMutation = useUpdateAppointment()
+
+  const updateNotesSchema = z.object({
+    notes: z.string().max(1000, t('appointments.form.validation.notesTooLong')).optional(),
+  })
+
+  type UpdateNotesFormData = z.infer<typeof updateNotesSchema>
+
 
   const {
     register,
@@ -97,7 +100,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
           <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">Loading appointment details...</div>
+            <div className="text-gray-500">{t('appointments.modal.loading')}</div>
           </div>
         </DialogContent>
       </Dialog>
@@ -109,7 +112,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
           <div className="flex items-center justify-center py-8">
-            <div className="text-red-500">Appointment not found</div>
+            <div className="text-red-500">{t('appointments.modal.appointmentNotFound')}</div>
           </div>
         </DialogContent>
       </Dialog>
@@ -120,7 +123,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Appointment Details</DialogTitle>
+          <DialogTitle>{t('appointments.details')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -130,7 +133,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
               {appointment.status.toUpperCase()}
             </Badge>
             <Badge className={getMeetingModeColor(appointment.meeting_mode)}>
-              {appointment.meeting_mode === 'online' ? 'Online Meeting' : 'Face-to-Face'}
+              {appointment.meeting_mode === 'online' ? t('appointments.modal.onlineMeeting') : t('appointments.modal.faceToFace')}
             </Badge>
           </div>
 
@@ -138,15 +141,15 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-3">
-                <div className="text-sm font-medium text-gray-700 mb-3 font-semibold">Student Information</div>
+                <div className="text-sm font-medium text-gray-700 mb-3 font-semibold">{t('appointments.modal.studentInformationTitle')}</div>
                 
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-500 mt-1" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500">Student Name</div>
+                    <div className="text-sm font-medium text-gray-500">{t('appointments.modal.studentName')}</div>
                     <div className="text-lg font-semibold">{appointment.child_name}</div>
                     <div className="text-sm text-gray-600">
-                      Year {appointment.child_year} - Class {appointment.child_class}
+                      {t('appointments.modal.yearClass', { year: appointment.child_year, class: appointment.child_class })}
                     </div>
                   </div>
                 </div>
@@ -154,7 +157,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 text-gray-500 mt-1" />
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-500">Parent Contact</div>
+                      <div className="text-sm font-medium text-gray-500">{t('appointments.modal.parentContactTitle')}</div>
                       <div className="text-lg font-semibold">{appointment.parent_contact}</div>
                     </div>
                   </div>
@@ -169,11 +172,11 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
               <div className="flex items-start gap-3">
                 <User className="w-5 h-5 text-gray-500 mt-1" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-500">Teacher</div>
+                  <div className="text-sm font-medium text-gray-500">{t('appointments.modal.teacherTitle')}</div>
                   <div className="text-lg font-semibold">{appointment.teacher?.user?.full_name || 'N/A'}</div>
                   <div className="text-sm text-gray-600">{appointment.teacher?.subject || 'N/A'}</div>
                   {appointment.teacher?.branch && (
-                    <div className="text-sm text-gray-500">Branch: {appointment.teacher.branch}</div>
+                    <div className="text-sm text-gray-500">{t('appointments.modal.branch')}: {appointment.teacher.branch}</div>
                   )}
                 </div>
               </div>
@@ -187,10 +190,10 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-500 mt-1" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500">Date</div>
+                    <div className="text-sm font-medium text-gray-500">{t('appointments.date')}</div>
                     <div className="text-sm">{formatDate(appointment.slot?.week_start_date)}</div>
                     <div className="text-sm text-gray-600">
-                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][
+                      {[t('common.days.monday'), t('common.days.tuesday'), t('common.days.wednesday'), t('common.days.thursday'), t('common.days.friday'), t('common.days.saturday'), t('common.days.sunday')][
                         appointment.slot?.day_of_week || 0
                       ]}
                     </div>
@@ -199,7 +202,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-gray-500 mt-1" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-500">Time</div>
+                    <div className="text-sm font-medium text-gray-500">{t('appointments.time')}</div>
                     <div className="text-sm">
                       {formatTime(appointment.slot?.start_time)} - {formatTime(appointment.slot?.end_time)}
                     </div>
@@ -216,7 +219,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                 <FileText className="w-5 h-5 text-gray-500 mt-1" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-500">Notes</div>
+                    <div className="text-sm font-medium text-gray-500">{t('appointments.notes')}</div>
                     {canEditNotes && !isEditingNotes && (
                       <Button
                         variant="ghost"
@@ -224,7 +227,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                         onClick={() => setIsEditingNotes(true)}
                       >
                         <Edit2 className="w-4 h-4 mr-1" />
-                        Edit
+                        {t('appointments.modal.edit')}
                       </Button>
                     )}
                   </div>
@@ -235,7 +238,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                         {...register('notes')}
                         rows={4}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Add notes about this appointment..."
+                        placeholder={t('appointments.errors.addNotesPlaceholder')}
                       />
                       {errors.notes && (
                         <p className="text-sm text-red-600">{errors.notes.message}</p>
@@ -247,7 +250,7 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                           disabled={updateMutation.isPending}
                         >
                           <Check className="w-4 h-4 mr-1" />
-                          Save
+                          {t('appointments.modal.save')}
                         </Button>
                         <Button
                           type="button"
@@ -259,13 +262,13 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
                           }}
                         >
                           <X className="w-4 h-4 mr-1" />
-                          Cancel
+                          {t('appointments.modal.cancel')}
                         </Button>
                       </div>
                     </form>
                   ) : (
                     <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {appointment.notes || 'No notes available'}
+                      {appointment.notes || t('appointments.modal.noNotesAvailable')}
                     </div>
                   )}
                 </div>
@@ -275,9 +278,9 @@ export function AppointmentDetailsModal({ appointmentId, open, onClose }: Appoin
 
           {/* Timestamps */}
           <div className="text-xs text-gray-500 space-y-1">
-            <div>Created: {new Date(appointment.created_at).toLocaleString()}</div>
+            <div>{t('appointments.modal.created')} {new Date(appointment.created_at).toLocaleString()}</div>
             {appointment.updated_at && (
-              <div>Last updated: {new Date(appointment.updated_at).toLocaleString()}</div>
+              <div>{t('appointments.modal.lastUpdated')} {new Date(appointment.updated_at).toLocaleString()}</div>
             )}
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import { useMutation } from '@tanstack/react-query'
 import { slotsAPI } from '@/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +33,7 @@ interface SlotEditFormProps {
 }
 
 export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
+  const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -69,27 +71,19 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
     updateSlotMutation.mutate(data)
   }
 
-  const days = [
-    { value: 0, label: 'Monday' },
-    { value: 1, label: 'Tuesday' },
-    { value: 2, label: 'Wednesday' },
-    { value: 3, label: 'Thursday' },
-    { value: 4, label: 'Friday' },
-    { value: 5, label: 'Saturday' },
-    { value: 6, label: 'Sunday' },
-  ]
+  const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Edit Slot</CardTitle>
+          <CardTitle>{t('slot.editSlot')}</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
         <div className="text-sm text-gray-600">
-          Editing slot for: {slot.teacher?.user?.full_name} ({slot.teacher?.subject})
+          {t('slot.management')}: {slot.teacher?.user?.full_name} ({slot.teacher?.subject})
         </div>
       </CardHeader>
       <CardContent>
@@ -102,10 +96,10 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
 
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
             <div className="text-sm">
-              <span className="font-medium">Teacher:</span> {slot.teacher?.user?.full_name}
+              <span className="font-medium">{t('appointments.teacher')}:</span> {slot.teacher?.user?.full_name}
             </div>
             <div className="text-sm text-gray-600">
-              Subject: {slot.teacher?.subject}
+              {t('teachers.subject')}: {slot.teacher?.subject}
               {slot.teacher?.branch && ` - ${slot.teacher.branch}`}
             </div>
           </div>
@@ -113,15 +107,15 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="day_of_week" className="block text-sm font-medium text-gray-700 mb-1">
-                Day of Week *
+                {t('appointments.date')} *
               </label>
               <select
                 {...register('day_of_week', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-                {days.map((day) => (
-                  <option key={day.value} value={day.value}>
-                    {day.label}
+                {dayKeys.map((dayKey, index) => (
+                  <option key={index} value={index}>
+                    {t(`days.${dayKey}`)}
                   </option>
                 ))}
               </select>
@@ -132,7 +126,7 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
 
             <div>
               <label htmlFor="week_start_date" className="block text-sm font-medium text-gray-700 mb-1">
-                Week Start Date *
+                {t('slot.form.startDate')} *
               </label>
               <input
                 {...register('week_start_date')}
@@ -148,7 +142,7 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="start_time" className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time *
+                {t('slot.form.startTime')} *
               </label>
               <input
                 {...register('start_time')}
@@ -162,7 +156,7 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
 
             <div>
               <label htmlFor="end_time" className="block text-sm font-medium text-gray-700 mb-1">
-                End Time *
+                {t('slot.form.endTime')} *
               </label>
               <input
                 {...register('end_time')}
@@ -177,13 +171,13 @@ export function SlotEditForm({ slot, onClose, onSuccess }: SlotEditFormProps) {
 
           <div className="flex items-center justify-end space-x-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('buttons.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={updateSlotMutation.isPending}
             >
-              {updateSlotMutation.isPending ? 'Updating...' : 'Update Slot'}
+              {updateSlotMutation.isPending ? t('common.loading') : t('slot.editSlot')}
             </Button>
           </div>
         </form>

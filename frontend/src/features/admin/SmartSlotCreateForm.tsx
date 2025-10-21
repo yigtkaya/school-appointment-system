@@ -2,28 +2,21 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import { type SmartSlotPreview } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useTeachers, usePreviewSmartSlots, useCreateSmartSlots, useTeacherByUserId } from '@/hooks'
 import { useAuthStore, useIsTeacher } from '@/stores/auth'
 
-const smartSlotSchema = z.object({
-  teacher_id: z.string().min(1, 'Please select a teacher'),
-  days_of_week: z.array(z.number()).min(1, 'Please select at least one day'),
-  start_time: z.string().min(1, 'Start time is required'),
-  end_time: z.string().min(1, 'End time is required'),
-  meeting_duration_minutes: z.number().min(15).max(120),
-  week_start_date: z.string().min(1, 'Week start date is required'),
-}).refine(
-  (data) => data.start_time < data.end_time,
-  {
-    message: "End time must be after start time",
-    path: ["end_time"],
-  }
-)
-
-type SmartSlotFormData = z.infer<typeof smartSlotSchema>
+type SmartSlotFormData = {
+  teacher_id: string
+  days_of_week: number[]
+  start_time: string
+  end_time: string
+  meeting_duration_minutes: number
+  week_start_date: string
+}
 
 interface SmartSlotCreateFormProps {
   onClose: () => void
@@ -44,8 +37,24 @@ const getNextMonday = (): string => {
 }
 
 export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
+  const { t } = useTranslation()
   const [preview, setPreview] = useState<SmartSlotPreview | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+
+  const smartSlotSchema = z.object({
+    teacher_id: z.string().min(1, t('admin.smartSlots.validation.selectTeacher')),
+    days_of_week: z.array(z.number()).min(1, t('admin.smartSlots.validation.selectDays')),
+    start_time: z.string().min(1, t('admin.smartSlots.validation.startTimeRequired')),
+    end_time: z.string().min(1, t('admin.smartSlots.validation.endTimeRequired')),
+    meeting_duration_minutes: z.number().min(15).max(120),
+    week_start_date: z.string().min(1, t('admin.smartSlots.validation.weekStartRequired')),
+  }).refine(
+    (data) => data.start_time < data.end_time,
+    {
+      message: t('admin.smartSlots.validation.endTimeAfterStart'),
+      path: ["end_time"],
+    }
+  )
 
   const {
     register,
@@ -121,7 +130,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
             {/* Teacher Selection */}
             <div>
               <label htmlFor="teacher_id" className="block text-sm font-medium text-gray-700 mb-2">
-                Teacher
+                {t('admin.smartSlots.teacher')}
               </label>
               {isTeacherUser ? (
                 <div className="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-sm flex items-center">
@@ -137,7 +146,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
                   {...register('teacher_id')}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
                 >
-                  <option value="">Select a teacher</option>
+                  <option value="">{t('admin.smartSlots.selectTeacher')}</option>
                   {teachers?.map((teacher) => (
                     <option key={teacher.id} value={teacher.id}>
                       {teacher.user.full_name} — {teacher.subject}
@@ -153,7 +162,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
             {/* Week Start Date */}
             <div>
               <label htmlFor="week_start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                Week Start Date
+                {t('admin.smartSlots.weekStartDate')}
               </label>
               <input
                 {...register('week_start_date')}
@@ -168,7 +177,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
             {/* Days Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Days
+                {t('admin.smartSlots.availableDays')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {dayNames.map((day, index) => (
@@ -201,7 +210,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="start_time" className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Time
+                  {t('admin.smartSlots.startTime')}
                 </label>
                 <input
                   {...register('start_time')}
@@ -215,7 +224,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
 
               <div>
                 <label htmlFor="end_time" className="block text-sm font-medium text-gray-700 mb-2">
-                  End Time
+                  {t('admin.smartSlots.endTime')}
                 </label>
                 <input
                   {...register('end_time')}
@@ -231,7 +240,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
             {/* Meeting Duration */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Meeting Duration (minutes)
+                {t('admin.smartSlots.meetingDuration')}
               </label>
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {commonDurations.map((duration) => (
@@ -270,7 +279,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
                 disabled={previewMutation.isPending}
                 className="w-full"
               >
-                {previewMutation.isPending ? 'Generating Preview...' : 'Preview Slots'}
+                {previewMutation.isPending ? t('admin.smartSlots.generatingPreview') : t('admin.smartSlots.previewSlots')}
               </Button>
             </div>
           </form>
@@ -281,33 +290,33 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
           {showPreview && preview ? (
             <div className="border border-gray-200 rounded-lg p-4 space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Slot Preview</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">{t('admin.smartSlots.slotPreview')}</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-blue-600">{preview.total_slots}</div>
-                  <div className="text-xs text-gray-600 mt-1">Total Slots</div>
+                  <div className="text-xs text-gray-600 mt-1">{t('admin.smartSlots.totalSlots')}</div>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-green-600">{preview.slots_per_day}</div>
-                  <div className="text-xs text-gray-600 mt-1">Per Day</div>
+                  <div className="text-xs text-gray-600 mt-1">{t('admin.smartSlots.perDay')}</div>
                 </div>
               </div>
 
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-gray-600">Time Range: </span>
+                  <span className="text-gray-600">{t('admin.smartSlots.timeRange')} </span>
                   <span className="font-medium text-gray-900">{preview.time_range}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Duration: </span>
-                  <span className="font-medium text-gray-900">{preview.meeting_duration_minutes} min meetings</span>
+                  <span className="text-gray-600">{t('admin.smartSlots.duration')} </span>
+                  <span className="font-medium text-gray-900">{preview.meeting_duration_minutes} {t('admin.smartSlots.minMeetings')}</span>
                 </div>
               </div>
 
               <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Days:</div>
+                <div className="text-sm font-medium text-gray-700 mb-2">{t('admin.smartSlots.days')}</div>
                 <div className="flex flex-wrap gap-1">
                   {preview.days.map((day) => (
                     <Badge key={day} variant="secondary" className="text-xs">
@@ -319,7 +328,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
 
               {selectedTeacher && (
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-xs text-gray-600 mb-1">Teacher</div>
+                  <div className="text-xs text-gray-600 mb-1">{t('admin.smartSlots.teacher')}</div>
                   <div className="text-sm font-medium text-gray-900">
                     {selectedTeacher.user.full_name}
                   </div>
@@ -335,7 +344,7 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
                   disabled={createMutation.isPending}
                   className="flex-1"
                 >
-                  {createMutation.isPending ? 'Creating...' : 'Create Slots'}
+                  {createMutation.isPending ? t('admin.smartSlots.creating') : t('admin.smartSlots.createSlots')}
                 </Button>
                 <Button
                   type="button"
@@ -343,16 +352,16 @@ export function SmartSlotCreateForm({ onSuccess }: SmartSlotCreateFormProps) {
                   onClick={() => setShowPreview(false)}
                   className="flex-1"
                 >
-                  Edit
+                  {t('admin.smartSlots.edit')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="border border-gray-200 rounded-lg p-8 text-center">
               <div className="text-gray-400 mb-3 text-3xl">✨</div>
-              <h3 className="font-semibold text-gray-700 mb-1">Smart Slot Creation</h3>
+              <h3 className="font-semibold text-gray-700 mb-1">{t('admin.smartSlots.smartSlotCreation')}</h3>
               <p className="text-sm text-gray-600">
-                Fill in the form and click "Preview Slots" to see what will be created
+                {t('admin.smartSlots.description')}
               </p>
             </div>
           )}

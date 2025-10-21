@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react' 
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 interface DashboardLayoutProps {
@@ -8,6 +9,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { t } = useTranslation()
   const { user, logout, isAuthenticated } = useAuthStore()
   const router = useRouter()
 
@@ -25,19 +27,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  School Appointment System
+                  {t('auth.login.title')}
                 </h1>
               </div>
               
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-600">
-                  Welcome, {user?.full_name || user?.email}
+                  {t('dashboard.welcome')}, {user?.full_name || user?.email}
                 </div>
                 <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                   {user?.role}
                 </div>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Logout
+                  {t('auth.logout')}
                 </Button>
               </div>
             </div>

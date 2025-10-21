@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +10,7 @@ import type { Teacher } from '@/types/api'
 import { useTeachers, useDeleteTeacher } from '@/hooks'
 
 export function TeacherManagement() {
+  const { t } = useTranslation()
   const { data: teachers, isLoading, error } = useTeachers()
   const deleteTeacherMutation = useDeleteTeacher()
   
@@ -16,7 +18,7 @@ export function TeacherManagement() {
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
 
   const handleDeleteTeacher = (teacher: Teacher) => {
-    if (confirm(`Are you sure you want to delete ${teacher.user?.full_name}?`)) {
+    if (confirm(`${t('teacher.confirmDelete')} ${teacher.user?.full_name}?`)) {
       deleteTeacherMutation.mutate(teacher.id)
     }
   }
@@ -26,7 +28,7 @@ export function TeacherManagement() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
-            <div className="text-gray-500">Loading teachers...</div>
+            <div className="text-gray-500">{t('teacher.loading')}</div>
           </div>
         </CardContent>
       </Card>
@@ -38,7 +40,7 @@ export function TeacherManagement() {
       <Card>
         <CardContent className="p-6">
           <div className="text-red-600">
-            Error loading teachers: {error instanceof Error ? error.message : 'Unknown error'}
+            {t('teacher.errorLoading')}: {error instanceof Error ? error.message : 'Unknown error'}
           </div>
         </CardContent>
       </Card>
@@ -50,10 +52,10 @@ export function TeacherManagement() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Teacher Management</CardTitle>
+            <CardTitle>{t('teacher.management')}</CardTitle>
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Add Teacher
+              {t('teacher.addTeacher')}
             </Button>
           </div>
         </CardHeader>
@@ -81,7 +83,7 @@ export function TeacherManagement() {
                         <Badge 
                           variant={teacher.user?.is_active ? "default" : "destructive"}
                         >
-                          {teacher.user?.is_active ? 'Active' : 'Inactive'}
+                          {teacher.user?.is_active ? t('status.active') : t('status.inactive')}
                         </Badge>
                       </div>
                       {teacher.bio && (
@@ -99,7 +101,7 @@ export function TeacherManagement() {
                     onClick={() => setEditingTeacher(teacher)}
                   >
                     <Edit className="w-4 h-4 mr-1" />
-                    Edit
+                    {t('buttons.edit')}
                   </Button>
                   <Button
                     variant="destructive"
@@ -108,7 +110,7 @@ export function TeacherManagement() {
                     disabled={deleteTeacherMutation.isPending}
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
+                    {t('buttons.delete')}
                   </Button>
                 </div>
               </div>
@@ -116,7 +118,7 @@ export function TeacherManagement() {
             
             {(!teachers || teachers.length === 0) && (
               <div className="text-center py-8 text-gray-500">
-                No teachers found. Add a teacher to get started.
+                {t('teacher.noTeachers')}
               </div>
             )}
           </div>

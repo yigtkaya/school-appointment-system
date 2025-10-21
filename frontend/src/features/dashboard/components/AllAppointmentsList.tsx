@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,12 +21,13 @@ export function AllAppointmentsList({
   onReject,
 }: AllAppointmentsListProps) {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Appointments</CardTitle>
-        <p className="text-sm text-gray-600">Manage all your scheduled appointments</p>
+        <CardTitle>{t('appointments.title')}</CardTitle>
+        <p className="text-sm text-gray-600">{t('dashboard.allAppointments')}</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -44,14 +46,14 @@ export function AllAppointmentsList({
                   </div>
                   {appointment.notes && (
                     <div className="bg-gray-100 p-2 rounded text-xs">
-                      <strong>Notes:</strong> {appointment.notes}
+                      <strong>{t('appointments.notes')}:</strong> {appointment.notes}
                     </div>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge className={getStatusBadgeColor(appointment.status)}>
-                  {appointment.status}
+                  {t(`appointments.status.${appointment.status}`)}
                 </Badge>
                 <Button
                   size="sm"
@@ -59,7 +61,7 @@ export function AllAppointmentsList({
                   onClick={() => setSelectedAppointmentId(appointment.id)}
                 >
                   <Eye className="w-4 h-4 mr-1" />
-                  View
+                  {t('buttons.view')}
                 </Button>
                 {appointment.status === 'pending' && (
                   <div className="flex gap-1">
@@ -70,7 +72,7 @@ export function AllAppointmentsList({
                       size="sm"
                       variant="destructive"
                       onClick={() => {
-                        const reason = prompt('Reason for rejection:')
+                        const reason = prompt(t('appointments.confirmation.importantInformation'))
                         if (reason) onReject(appointment.id, reason)
                       }}
                     >

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -27,15 +28,13 @@ import type {
   AppointmentBookingRequest
 } from '@/types/api'
 
-const bookingFormSchema = z.object({
-  child_name: z.string().min(1, 'Student name is required').max(200, 'Name is too long'),
-  child_year: z.string().regex(/^[1-8]$/, 'Please select a valid year (1-8)'),
-  child_class: z.string().regex(/^[A-E]$/, 'Please select a valid class (A-E)'),
-  parent_contact: z.string().max(200, 'Contact is too long').optional(),
-  notes: z.string().max(500, 'Notes must be less than 500 characters').optional()
-})
-
-type BookingFormData = z.infer<typeof bookingFormSchema>
+type BookingFormData = {
+  child_name: string
+  child_year: string
+  child_class: string
+  parent_contact?: string
+  notes?: string
+}
 
 interface AppointmentBookingModalProps {
   isOpen: boolean
@@ -46,14 +45,6 @@ interface AppointmentBookingModalProps {
 
 type BookingStep = 'child_info' | 'teacher' | 'slot' | 'mode' | 'notes' | 'confirm'
 
-const STEP_TITLES = {
-  child_info: 'Student Information',
-  teacher: 'Select Teacher',
-  slot: 'Choose Time Slot',
-  mode: 'Meeting Format',
-  notes: 'Additional Notes',
-  confirm: 'Confirm Booking'
-}
 
 const STEP_PROGRESS = {
   child_info: 16,
@@ -68,6 +59,7 @@ export function AppointmentBookingModal({
   isOpen,
   onClose,
   teacherId}: AppointmentBookingModalProps) {
+  const { t } = useTranslation()
   const {
     currentStep,
     selectedTeacher,
@@ -80,7 +72,24 @@ export function AppointmentBookingModal({
     setSelectedMode,
     setBookingError,
   } = useAppointmentBookingStore()
+
+  const STEP_TITLES = {
+    child_info: t('appointments.childInfo'),
+    teacher: t('appointments.selectTeacher'),
+    slot: t('appointments.selectSlot'),
+    mode: t('appointments.meetingMode'),
+    notes: t('appointments.notes'),
+    confirm: t('appointments.confirm')
+  }
   const queryClient = useQueryClient()
+
+  const bookingFormSchema = z.object({
+    child_name: z.string().min(1, t('appointments.form.validation.childNameRequired')).max(200, t('appointments.form.validation.nameIsTooLong')),
+    child_year: z.string().regex(/^[1-8]$/, t('appointments.form.validation.selectValidYear')),
+    child_class: z.string().regex(/^[A-E]$/, t('appointments.form.validation.selectValidClass')),
+    parent_contact: z.string().max(200, t('appointments.form.validation.contactIsTooLong')).optional(),
+    notes: z.string().max(500, t('appointments.form.validation.notesTooLong')).optional()
+  })
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
@@ -105,7 +114,7 @@ export function AppointmentBookingModal({
       return appointmentsAPI.book(data)
     },
     onSuccess: () => {
-      toast.success('Appointment booked successfully!')
+      toast.success(t('appointments.errors.appointmentBookedSuccessfully'))
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
       queryClient.invalidateQueries({ queryKey: ['teacher-schedule'] })
       onClose()
@@ -118,7 +127,7 @@ export function AppointmentBookingModal({
     },
     onError: (error: unknown) => {
       const apiError = error as { response?: { data?: { detail?: string } } }
-      const errorMessage = apiError?.response?.data?.detail || 'Failed to book appointment'
+      const errorMessage = apiError?.response?.data?.detail || t('appointments.errors.bookingFailed')
       setBookingError(errorMessage)
       toast.error(errorMessage)
     }
@@ -156,7 +165,7 @@ export function AppointmentBookingModal({
 
   const handleConfirmBooking = handleSubmit(async (formData) => {
     if (!selectedTeacher || !selectedSlot || !selectedMode) {
-      toast.error('Please complete all required fields')
+      toast.error(t('appointments.errors.completeAllFields'))
       return
     }
 
@@ -206,7 +215,7 @@ export function AppointmentBookingModal({
       case 'teacher':
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Select a Teacher</h3>
+            <h3 className="text-lg font-semibold">{t('appointments.modal.selectTeacher')}</h3>
             <TeacherSelector
               teachers={teachers}
               isLoading={loadingTeachers}
@@ -275,14 +284,14 @@ export function AppointmentBookingModal({
     }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Book an Appointment</DialogTitle>
+          <DialogTitle>{t('appointments.modal.bookAppointment')}</DialogTitle>
         </DialogHeader>
 
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm font-medium">
             <span>{STEP_TITLES[currentStep]}</span>
-            <span>Step {Object.keys(STEP_TITLES).indexOf(currentStep) + 1} of {Object.keys(STEP_TITLES).length}</span>
+            <span>{t('appointments.modal.stepOf', { current: Object.keys(STEP_TITLES).indexOf(currentStep) + 1, total: Object.keys(STEP_TITLES).length })}</span>
           </div>
           <Progress value={STEP_PROGRESS[currentStep]} className="h-2" />
         </div>
@@ -301,13 +310,13 @@ export function AppointmentBookingModal({
               disabled={currentStep === 'child_info'}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              {t('appointments.modal.back')}
             </Button>
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
             >
-              Next
+              {t('appointments.modal.next')}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

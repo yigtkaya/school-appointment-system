@@ -47,11 +47,6 @@ export function ParentDashboard({ parentId, isPublic = false }: ParentDashboardP
     }
   }
 
-  const upcomingAppointments = parentAppointments?.filter(apt => {
-    const appointmentDate = new Date(apt.slot?.week_start_date || '')
-    return appointmentDate >= new Date() && apt.status !== 'cancelled'
-  }) || []
-
   const renderHomeView = () => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
       <div className="w-full max-w-4xl mx-auto px-6">
