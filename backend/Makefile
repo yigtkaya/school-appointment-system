@@ -12,23 +12,14 @@ install: ## Install Python dependencies
 	pip install -r requirements.txt
 
 # Development
-dev: ## Start development environment (DB + Redis only)
+dev: ## Start development environment (DB only)
 	docker-compose -f deployment/docker-compose.dev.yml up -d
 	@echo ""
-	@echo "✅ PostgreSQL and Redis started!"
-	@echo "Run: make run-api, make run-worker, make run-beat"
+	@echo "✅ PostgreSQL started!"
+	@echo "Run: make run-api"
 
 run-api: ## Run FastAPI server
 	uvicorn app.main:app --reload --port 8001
-
-run-worker: ## Run Celery worker
-	celery -A app.core.celery_app worker --loglevel=info
-
-run-beat: ## Run Celery beat
-	celery -A app.core.celery_app beat --loglevel=info
-
-run-flower: ## Run Flower monitoring
-	celery -A app.core.celery_app flower --port=5555
 
 # Production
 prod: ## Deploy production environment
@@ -74,7 +65,4 @@ shell: ## Open Python shell
 	python -i -c "from app.db.session import SessionLocal; from app.models import *; db = SessionLocal()"
 
 db-shell: ## PostgreSQL shell
-	docker-compose -f deployment/docker-compose.dev.yml exec postgres psql -U schooladmin -d school_appointments
-
-redis-cli: ## Redis CLI
-	docker-compose -f deployment/docker-compose.dev.yml exec redis redis-cli
+	docker-compose -f deployment/docker-compose.dev.yml exec postgres psql -U appointment_user -d school_appointments

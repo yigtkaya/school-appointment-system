@@ -23,23 +23,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis
-  redis:
-    image: redis:7-alpine
-    container_name: school-redis-dev
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_dev_data:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Backend API
   backend:
     build:
@@ -49,7 +32,6 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
-      - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - DEBUG=true
       - HOST=0.0.0.0
@@ -65,8 +47,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     command: >
       sh -c "
         echo 'Waiting for database to be ready...' &&
@@ -75,56 +55,7 @@ services:
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
-  # Celery Worker
-  celery-worker:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    container_name: school-celery-worker-dev
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-    volumes:
-      - ../app:/app/app:ro
-    networks:
-      - app-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    user: appuser
-    command: celery -A app.core.celery_app worker --loglevel=info
 
-  # Celery Beat (Scheduler)
-  celery-beat:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    container_name: school-celery-beat-dev
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://appointment_user:appointment_password@postgres:5432/school_appointments
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-    volumes:
-      - ../app:/app/app:ro
-      - celery_beat_data:/app/celerybeat
-    networks:
-      - app-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    user: appuser
-    command: >
-      sh -c "
-        mkdir -p /app/celerybeat &&
-        celery -A app.core.celery_app beat --loglevel=info --pidfile=/app/celerybeat/celerybeat.pid --schedule=/app/celerybeat/celerybeat-schedule
-      "
 
 networks:
   app-network:
@@ -132,5 +63,3 @@ networks:
 
 volumes:
   postgres_dev_data:
-  redis_dev_data:
-  celery_beat_data:
