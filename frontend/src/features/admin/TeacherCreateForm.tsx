@@ -9,8 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 
+// Base schema without i18n - will be extended with translated messages in component
+const createTeacherSchemaBase = z.object({
+  email: z.email(),
+  password: z.string().min(6),
+  full_name: z.string().min(1),
+  subject: z.string().min(1),
+  branch: z.string().optional(),
+  bio: z.string().optional(),
+})
 
-type CreateTeacherFormData = z.infer<typeof createTeacherSchema>
+type CreateTeacherFormData = z.infer<typeof createTeacherSchemaBase>
 
 interface TeacherCreateFormProps {
   onClose: () => void
