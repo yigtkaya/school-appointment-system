@@ -12,7 +12,7 @@ function Dashboard() {
   const { user } = useAuthStore()
 
   if (!user) {
-    return <IndexPage/>
+    return <TeacherDashboard/>
   }
 
   switch (user.role) {
@@ -21,6 +21,6 @@ function Dashboard() {
     case 'teacher':
       return <TeacherDashboard />
     default:
-      return <IndexPage/>
+      return <TeacherDashboard/>
   }
 }

@@ -5,57 +5,43 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPut, apiDelete, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
+import { usersAPI } from '@/api/users';
 import { queryKeys } from './queryKeys';
-import type { User, CreateUser, UpdateUser } from '../types/schemas';
-
-const getToken = () => {
-  const storage = localStorage.getItem('auth-storage');
-  return storage ? JSON.parse(storage).state?.token : null;
-};
+import type { User, CreateUser, UpdateUser } from '@/api/types';
 
 /**
- * Get all users (admin only)
+ * Get all teachers (admin only)
  */
-export function useUsers(options?: UseQueryOptions<User[], APIError>) {
-  const token = getToken();
-
+export function useTeachers(options?: UseQueryOptions<User[], Error>) {
   return useQuery({
-    queryKey: queryKeys.users(),
-    queryFn: () => apiGet<User[]>(API_ENDPOINTS.ADMIN_USERS, token || undefined),
-    enabled: !!token,
+    queryKey: [...queryKeys.users(), 'teachers'],
+    queryFn: usersAPI.getTeachers,
     ...options,
   });
 }
 
 /**
- * Get a specific user
+ * Get a specific teacher (admin only)
  */
-export function useUser(id: number, options?: UseQueryOptions<User, APIError>) {
-  const token = getToken();
-
+export function useTeacher(id: number, options?: UseQueryOptions<User, Error>) {
   return useQuery({
-    queryKey: queryKeys.user(id),
-    queryFn: () =>
-      apiGet<User>(`${API_ENDPOINTS.ADMIN_USERS}/${id}`, token || undefined),
-    enabled: !!token && !!id,
+    queryKey: [...queryKeys.users(), 'teachers', id],
+    queryFn: () => usersAPI.getTeacherById(id),
+    enabled: !!id,
     ...options,
   });
 }
 
 /**
- * Create a new user (admin only)
+ * Create a new teacher (admin only)
  */
-export function useCreateUserMutation(
-  options?: UseMutationOptions<User, APIError, CreateUser>,
+export function useCreateTeacherMutation(
+  options?: UseMutationOptions<User, Error, CreateUser>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<User>(API_ENDPOINTS.ADMIN_USERS, data, token || undefined),
+    mutationFn: usersAPI.createTeacher,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
     },
@@ -64,38 +50,67 @@ export function useCreateUserMutation(
 }
 
 /**
- * Update a user (admin only)
+ * Update a teacher (admin only)
  */
-export function useUpdateUserMutation(
-  id: number,
-  options?: UseMutationOptions<User, APIError, UpdateUser>,
+export function useUpdateTeacherMutation(
+  options?: UseMutationOptions<User, Error, { id: number; data: UpdateUser }>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPut<User>(`${API_ENDPOINTS.ADMIN_USERS}/${id}`, data, token || undefined),
-    onSuccess: (updatedUser) => {
+    mutationFn: ({ id, data }) => usersAPI.updateTeacher(id, data),
+    onSuccess: (updatedUser, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
-      queryClient.setQueryData(queryKeys.user(id), updatedUser);
+      queryClient.setQueryData([...queryKeys.users(), 'teachers', id], updatedUser);
     },
     ...options,
   });
 }
 
 /**
- * Delete a user (admin only)
+ * Delete a teacher (admin only)
  */
-export function useDeleteUserMutation(
-  options?: UseMutationOptions<void, APIError, number>,
+export function useDeleteTeacherMutation(
+  options?: UseMutationOptions<void, Error, number>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (id) =>
-      apiDelete(`${API_ENDPOINTS.ADMIN_USERS}/${id}`, token || undefined),
+    mutationFn: usersAPI.deleteTeacher,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Approve a teacher account (admin only)
+ */
+export function useApproveTeacherMutation(
+  options?: UseMutationOptions<User, Error, number>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.approveTeacher,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Require approval for teacher (admin only)
+ */
+export function useRequireApprovalMutation(
+  options?: UseMutationOptions<User, Error, number>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.requireApproval,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
     },

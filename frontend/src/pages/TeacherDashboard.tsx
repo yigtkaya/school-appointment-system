@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProfile, useTeacherAppointments, useTeacherSlots } from '@/hooks';
+import { useMe, useTeacherAppointments, useTeacherSlots } from '@/hooks';
 import { DashboardHeader } from '../components/TeacherDashboard/DashboardHeader';
 import { DashboardTabs } from '../components/TeacherDashboard/DashboardTabs';
 import { AppointmentsList } from '../components/TeacherDashboard/AppointmentsList';
@@ -20,7 +20,7 @@ export function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
 
   // Get current teacher profile
-  const profileQuery = useProfile();
+  const profileQuery = useMe();
   const { data: currentUser, isLoading: profileLoading } = profileQuery;
 
   // Get teacher's appointments and slots
@@ -93,7 +93,6 @@ export function TeacherDashboard() {
         <div className="mt-6">
           {activeTab === 'appointments' && (
             <AppointmentsList
-              teacherId={currentUser.id}
               appointments={appointmentsQuery.data || []}
               isLoading={appointmentsQuery.isLoading}
               onAppointmentUpdate={() => appointmentsQuery.refetch()}

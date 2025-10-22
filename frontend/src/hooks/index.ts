@@ -1,61 +1,75 @@
 // Auth hooks
-export { useProfile, useRegisterMutation, useLoginMutation } from './useAuth';
+export { 
+  useMe, 
+  useCheckAuth, 
+  useLogin, 
+  useRegister, 
+  useLogout, 
+  useRefreshToken 
+} from './useAuth';
 
 // Classes hooks
 export {
-    useClasses,
-    useClass,
-    useCreateClassMutation,
-    useUpdateClassMutation,
-    useDeleteClassMutation,
+  useClasses,
+  useClass,
+  useClassTeachers,
+  useCreateClassMutation,
+  useAdminCreateClassMutation,
+  useUpdateClassMutation,
+  useDeleteClassMutation,
+  useAssignTeacherMutation,
 } from './useClasses';
 
 // Students hooks
 export {
-    useStudents,
-    useStudent,
-    useCreateStudentMutation,
-    useUpdateStudentMutation,
-    useDeleteStudentMutation,
+  useStudent,
+  useStudentsByClass,
+  useCreateStudentMutation,
+  useAdminCreateStudentMutation,
+  useUpdateStudentMutation,
+  useDeleteStudentMutation,
 } from './useStudents';
 
 // Slots hooks
 export {
-    useTeacherSlots,
-    useCreateSlotMutation,
-    useUpdateSlotMutation,
-    useDeleteSlotMutation,
-    useTeacherAvailableDays,
-    useTeacherAvailableTimes,
+  useTeacherSlots,
+  useTeacherAvailableDays,
+  useTeacherAvailableTimes,
+  useCreateSlotMutation,
+  useUpdateSlotMutation,
+  useDeleteSlotMutation,
 } from './useSlots';
 
 // Appointments hooks
 export {
-    useAppointments,
-    useTeacherAppointments,
-    useAppointment,
-    useCreateAppointmentMutation,
-    useUpdateAppointmentMutation,
-    useDeleteAppointmentMutation,
+  useAppointments,
+  useTeacherAppointments,
+  useAppointment,
+  useAppointmentStats,
+  useCreateAppointmentMutation,
+  useUpdateAppointmentMutation,
+  useCancelAppointmentMutation,
 } from './useAppointments';
 
 // Admin Users hooks
 export {
-    useUsers,
-    useUser,
-    useCreateUserMutation,
-    useUpdateUserMutation,
-    useDeleteUserMutation,
+  useTeachers,
+  useTeacher,
+  useCreateTeacherMutation,
+  useUpdateTeacherMutation,
+  useDeleteTeacherMutation,
+  useApproveTeacherMutation,
+  useRequireApprovalMutation,
 } from './useAdminUsers';
 
 // Query keys
 export { queryKeys } from './queryKeys';
 
-// Auth utilities (components and helper hooks)
-export {
-    ProtectedRoute,
-    useHasRole,
-    useIsAuthenticated,
-    useCurrentUser,
-    useAuthToken,
-} from './useAuth.utils';
+// Auth utilities (if they exist)
+// export {
+//   ProtectedRoute,
+//   useHasRole,
+//   useIsAuthenticated,
+//   useCurrentUser,
+//   useAuthToken,
+// } from './useAuth.utils';

@@ -1,5 +1,5 @@
+import type { User } from '@/api/types';
 import { Calendar, CheckCircle } from 'lucide-react';
-import type { User } from '../../types/schemas';
 
 interface DashboardHeaderProps {
   teacher: User;

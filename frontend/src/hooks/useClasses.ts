@@ -5,56 +5,75 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPut, apiDelete, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
+import { classesAPI } from '@/api/classes';
 import { queryKeys } from './queryKeys';
-import type { Class, CreateClass, UpdateClass } from '../types/schemas';
-
-const getToken = () => {
-  const storage = localStorage.getItem('auth-storage');
-  return storage ? JSON.parse(storage).state?.token : null;
-};
+import type { Class, CreateClass, UpdateClass, User, TeacherClassAssignment } from '@/api/types';
 
 /**
- * Get all classes
+ * Get all classes (public)
  */
-export function useClasses(options?: UseQueryOptions<Class[], APIError>) {
-  const token = getToken();
-
+export function useClasses(options?: UseQueryOptions<Class[], Error>) {
   return useQuery({
     queryKey: queryKeys.classes(),
-    queryFn: () => apiGet<Class[]>(API_ENDPOINTS.CLASSES_LIST, token || undefined),
-    enabled: !!token,
+    queryFn: classesAPI.getAll,
     ...options,
   });
 }
 
 /**
- * Get a specific class
+ * Get a specific class (public)
  */
-export function useClass(id: number, options?: UseQueryOptions<Class, APIError>) {
-  const token = getToken();
-
+export function useClass(id: number, options?: UseQueryOptions<Class, Error>) {
   return useQuery({
     queryKey: queryKeys.class(id),
-    queryFn: () => apiGet<Class>(`${API_ENDPOINTS.CLASSES_LIST}/${id}`, token || undefined),
-    enabled: !!token && !!id,
+    queryFn: () => classesAPI.getById(id),
+    enabled: !!id,
     ...options,
   });
 }
 
 /**
- * Create a new class (admin only)
+ * Get teachers for a specific class
+ */
+export function useClassTeachers(
+  classId: number, 
+  options?: UseQueryOptions<User[], Error>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.classes(), classId, 'teachers'],
+    queryFn: () => classesAPI.getTeachers(classId),
+    enabled: !!classId,
+    ...options,
+  });
+}
+
+/**
+ * Create a new class (public endpoint)
  */
 export function useCreateClassMutation(
-  options?: UseMutationOptions<Class, APIError, CreateClass>,
+  options?: UseMutationOptions<Class, Error, CreateClass>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<Class>(API_ENDPOINTS.ADMIN_CLASSES_CREATE, data, token || undefined),
+    mutationFn: classesAPI.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Create a new class (admin endpoint)
+ */
+export function useAdminCreateClassMutation(
+  options?: UseMutationOptions<Class, Error, CreateClass>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: classesAPI.adminCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
     },
@@ -66,16 +85,13 @@ export function useCreateClassMutation(
  * Update a class (admin only)
  */
 export function useUpdateClassMutation(
-  id: number,
-  options?: UseMutationOptions<Class, APIError, UpdateClass>,
+  options?: UseMutationOptions<Class, Error, { id: number; data: UpdateClass }>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPut<Class>(`${API_ENDPOINTS.ADMIN_CLASSES_UPDATE}/${id}`, data, token || undefined),
-    onSuccess: (updatedClass) => {
+    mutationFn: ({ id, data }) => classesAPI.adminUpdate(id, data),
+    onSuccess: (updatedClass, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
       queryClient.setQueryData(queryKeys.class(id), updatedClass);
     },
@@ -87,14 +103,29 @@ export function useUpdateClassMutation(
  * Delete a class (admin only)
  */
 export function useDeleteClassMutation(
-  options?: UseMutationOptions<void, APIError, number>,
+  options?: UseMutationOptions<void, Error, number>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (id) =>
-      apiDelete(`${API_ENDPOINTS.ADMIN_CLASSES_UPDATE}/${id}`, token || undefined),
+    mutationFn: classesAPI.adminDelete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Assign teacher to class
+ */
+export function useAssignTeacherMutation(
+  options?: UseMutationOptions<TeacherClassAssignment, Error, { teacherId: number; classId: number }>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teacherId, classId }) => classesAPI.assignTeacher(teacherId, classId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
     },

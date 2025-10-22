@@ -5,45 +5,33 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPut, apiDelete, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
+import { studentsAPI } from '@/api/students';
 import { queryKeys } from './queryKeys';
-import type { Student, CreateStudent, UpdateStudent } from '../types/schemas';
-
-const getToken = () => {
-  const storage = localStorage.getItem('auth-storage');
-  return storage ? JSON.parse(storage).state?.token : null;
-};
+import type { Student, CreateStudent, UpdateStudent } from '@/api/types';
 
 /**
- * Get all students (admin only)
+ * Get a specific student
  */
-export function useStudents(options?: UseQueryOptions<Student[], APIError>) {
-  const token = getToken();
-
+export function useStudent(id: number, options?: UseQueryOptions<Student, Error>) {
   return useQuery({
-    queryKey: queryKeys.students(),
-    queryFn: () =>
-      apiGet<Student[]>(API_ENDPOINTS.ADMIN_STUDENTS_LIST, token || undefined),
-    enabled: !!token,
+    queryKey: queryKeys.student(id),
+    queryFn: () => studentsAPI.getById(id),
+    enabled: !!id,
     ...options,
   });
 }
 
 /**
- * Get a specific student
+ * Get students in a specific class
  */
-export function useStudent(id: number, options?: UseQueryOptions<Student, APIError>) {
-  const token = getToken();
-
+export function useStudentsByClass(
+  classId: number, 
+  options?: UseQueryOptions<Student[], Error>
+) {
   return useQuery({
-    queryKey: queryKeys.student(id),
-    queryFn: () =>
-      apiGet<Student>(
-        `${API_ENDPOINTS.ADMIN_STUDENTS_LIST}/${id}`,
-        token || undefined,
-      ),
-    enabled: !!token && !!id,
+    queryKey: [...queryKeys.students(), 'class', classId],
+    queryFn: () => studentsAPI.getByClass(classId),
+    enabled: !!classId,
     ...options,
   });
 }
@@ -52,14 +40,29 @@ export function useStudent(id: number, options?: UseQueryOptions<Student, APIErr
  * Create a new student (admin only)
  */
 export function useCreateStudentMutation(
-  options?: UseMutationOptions<Student, APIError, CreateStudent>,
+  options?: UseMutationOptions<Student, Error, CreateStudent>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<Student>(API_ENDPOINTS.ADMIN_STUDENTS_CREATE, data, token || undefined),
+    mutationFn: studentsAPI.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.students() });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Create a new student (admin endpoint)
+ */
+export function useAdminCreateStudentMutation(
+  options?: UseMutationOptions<Student, Error, CreateStudent>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: studentsAPI.adminCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.students() });
     },
@@ -71,20 +74,13 @@ export function useCreateStudentMutation(
  * Update a student (admin only)
  */
 export function useUpdateStudentMutation(
-  id: number,
-  options?: UseMutationOptions<Student, APIError, UpdateStudent>,
+  options?: UseMutationOptions<Student, Error, { id: number; data: UpdateStudent }>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPut<Student>(
-        `${API_ENDPOINTS.ADMIN_STUDENTS_UPDATE}/${id}`,
-        data,
-        token || undefined,
-      ),
-    onSuccess: (updatedStudent) => {
+    mutationFn: ({ id, data }) => studentsAPI.adminUpdate(id, data),
+    onSuccess: (updatedStudent, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.students() });
       queryClient.setQueryData(queryKeys.student(id), updatedStudent);
     },
@@ -96,14 +92,12 @@ export function useUpdateStudentMutation(
  * Delete a student (admin only)
  */
 export function useDeleteStudentMutation(
-  options?: UseMutationOptions<void, APIError, number>,
+  options?: UseMutationOptions<void, Error, number>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (id) =>
-      apiDelete(`${API_ENDPOINTS.ADMIN_STUDENTS_UPDATE}/${id}`, token || undefined),
+    mutationFn: studentsAPI.adminDelete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.students() });
     },

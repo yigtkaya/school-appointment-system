@@ -5,37 +5,57 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPut, apiDelete, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
+import { slotsAPI } from '@/api/slots';
 import { queryKeys } from './queryKeys';
 import type {
   AvailableSlot,
   CreateAvailableSlot,
   UpdateAvailableSlot,
-} from '../types/schemas';
-
-const getToken = () => {
-  const storage = localStorage.getItem('auth-storage');
-  return storage ? JSON.parse(storage).state?.token : null;
-};
+  AvailableTime,
+} from '@/api/types';
 
 /**
  * Get available slots for a teacher
  */
 export function useTeacherSlots(
   teacherId: number,
-  options?: UseQueryOptions<AvailableSlot[], APIError>,
+  options?: UseQueryOptions<AvailableSlot[], Error>,
 ) {
-  const token = getToken();
-
   return useQuery({
     queryKey: queryKeys.teacherSlots(teacherId),
-    queryFn: () =>
-      apiGet<AvailableSlot[]>(
-        API_ENDPOINTS.TEACHER_SLOTS_LIST.replace(':teacherId', teacherId.toString()),
-        token || undefined,
-      ),
-    enabled: !!token && !!teacherId,
+    queryFn: () => slotsAPI.getTeacherSlots(teacherId),
+    enabled: !!teacherId,
+    ...options,
+  });
+}
+
+/**
+ * Get available days for a teacher
+ */
+export function useTeacherAvailableDays(
+  teacherId: number,
+  options?: UseQueryOptions<number[], Error>,
+) {
+  return useQuery({
+    queryKey: [...queryKeys.teacherSlots(teacherId), 'days'],
+    queryFn: () => slotsAPI.getAvailableDays(teacherId),
+    enabled: !!teacherId,
+    ...options,
+  });
+}
+
+/**
+ * Get available times for a teacher on a specific date
+ */
+export function useTeacherAvailableTimes(
+  teacherId: number,
+  date: string,
+  options?: UseQueryOptions<AvailableTime[], Error>,
+) {
+  return useQuery({
+    queryKey: [...queryKeys.teacherSlots(teacherId), 'times', date],
+    queryFn: () => slotsAPI.getAvailableTimes(teacherId, date),
+    enabled: !!teacherId && !!date,
     ...options,
   });
 }
@@ -45,18 +65,12 @@ export function useTeacherSlots(
  */
 export function useCreateSlotMutation(
   teacherId: number,
-  options?: UseMutationOptions<AvailableSlot, APIError, CreateAvailableSlot>,
+  options?: UseMutationOptions<AvailableSlot, Error, CreateAvailableSlot>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<AvailableSlot>(
-        API_ENDPOINTS.TEACHER_SLOTS_CREATE.replace(':teacherId', teacherId.toString()),
-        data,
-        token || undefined,
-      ),
+    mutationFn: (data) => slotsAPI.create(teacherId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.teacherSlots(teacherId),
@@ -71,22 +85,12 @@ export function useCreateSlotMutation(
  */
 export function useUpdateSlotMutation(
   teacherId: number,
-  slotId: number,
-  options?: UseMutationOptions<AvailableSlot, APIError, UpdateAvailableSlot>,
+  options?: UseMutationOptions<AvailableSlot, Error, { slotId: number; data: UpdateAvailableSlot }>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPut<AvailableSlot>(
-        `${API_ENDPOINTS.TEACHER_SLOTS_UPDATE.replace(
-          ':teacherId',
-          teacherId.toString(),
-        )}/${slotId}`,
-        data,
-        token || undefined,
-      ),
+    mutationFn: ({ slotId, data }) => slotsAPI.update(teacherId, slotId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.teacherSlots(teacherId),
@@ -101,68 +105,17 @@ export function useUpdateSlotMutation(
  */
 export function useDeleteSlotMutation(
   teacherId: number,
-  options?: UseMutationOptions<void, APIError, number>,
+  options?: UseMutationOptions<void, Error, number>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (slotId) =>
-      apiDelete(
-        `${API_ENDPOINTS.TEACHER_SLOTS_UPDATE.replace(
-          ':teacherId',
-          teacherId.toString(),
-        )}/${slotId}`,
-        token || undefined,
-      ),
+    mutationFn: (slotId) => slotsAPI.delete(teacherId, slotId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.teacherSlots(teacherId),
       });
     },
-    ...options,
-  });
-}
-
-/**
- * Get available days for a teacher
- */
-export function useTeacherAvailableDays(
-  teacherId: number,
-  options?: UseQueryOptions<string[], APIError>,
-) {
-  const token = getToken();
-
-  return useQuery({
-    queryKey: [...queryKeys.teacherSlots(teacherId), 'days'],
-    queryFn: () =>
-      apiGet<string[]>(
-        API_ENDPOINTS.TEACHER_AVAILABLE_DAYS(teacherId),
-        token || undefined,
-      ),
-    enabled: !!token && !!teacherId,
-    ...options,
-  });
-}
-
-/**
- * Get available times for a teacher on a specific date
- */
-export function useTeacherAvailableTimes(
-  teacherId: number,
-  date: string,
-  options?: UseQueryOptions<string[], APIError>,
-) {
-  const token = getToken();
-
-  return useQuery({
-    queryKey: [...queryKeys.teacherSlots(teacherId), 'times', date],
-    queryFn: () =>
-      apiGet<string[]>(
-        API_ENDPOINTS.TEACHER_AVAILABLE_TIMES(teacherId, date),
-        token || undefined,
-      ),
-    enabled: !!token && !!teacherId && !!date,
     ...options,
   });
 }

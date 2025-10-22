@@ -1,9 +1,9 @@
 
 import { useNavigate } from '@tanstack/react-router'
-import { useRegisterMutation } from '@/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { RegisterSchema } from "@/types/schemas";
 import { useForm } from 'react-hook-form';
+import { useRegister } from '@/hooks';
+import { RegisterSchema } from '@/lib/schemas';
 
 type RegisterFormData = {
   email: string
@@ -14,7 +14,7 @@ type RegisterFormData = {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const registerMutation = useRegisterMutation()
+  const registerMutation = useRegister()
   
   const {
     register,
@@ -27,7 +27,6 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
       await registerMutation.mutateAsync({
         ...data,
-        role: 'teacher', // Default role for new registrations
       })
       // Navigate to the intended destination or dashboard
       navigate({ to: '/dashboard' })

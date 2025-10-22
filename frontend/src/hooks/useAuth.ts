@@ -1,76 +1,143 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryOptions,
-  type UseMutationOptions,
-} from '@tanstack/react-query';
-import { apiGet, apiPost, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
-import { queryKeys } from './queryKeys';
-import type { User } from '../types/schemas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { authAPI } from '@/api/auth'
+import type { LoginRequest, RegisterRequest } from '@/api/types'
+import  { useAuthStore } from '@/store/auth'
 
-/**
- * Get current authenticated user profile
- */
-export function useProfile(options?: UseQueryOptions<User, APIError>) {
-  const token = localStorage.getItem('auth-storage')
-    ? JSON.parse(localStorage.getItem('auth-storage') || '{}').state?.token
-    : null;
+// Query keys
+export const authKeys = {
+  me: ['auth', 'me'] as const,
+}
 
+// Hook to get current user data
+export const useMe = () => {
+  const { setUser, clearAuthData } = useAuthStore()
+  
   return useQuery({
-    queryKey: queryKeys.auth(),
-    queryFn: () => apiGet<User>(API_ENDPOINTS.AUTH_PROFILE, token || undefined),
-    enabled: !!token,
-    ...options,
-  });
+    queryKey: authKeys.me,
+    queryFn: async () => {
+      try {
+        const user = await authAPI.me()
+        setUser(user)
+        return user
+      } catch (error) {
+        clearAuthData()
+        throw error
+      }
+    },
+    retry: false,
+    staleTime: 5 * 600 * 1000, // 10 minutes
+  })
 }
 
-/**
- * Register new user
- */
-export function useRegisterMutation(
-  options?: UseMutationOptions<
-    { access_token: string },
-    APIError,
-    {
-      email: string;
-      password: string;
-      name: string;
-      role: 'teacher' | 'parent';
-    }
-  >,
-) {
-  const queryClient = useQueryClient();
+// Hook to check authentication on app load
+export const useCheckAuth = () => {
+  const { setUser, clearAuthData } = useAuthStore()
+  
+  return useQuery({
+    queryKey: authKeys.me,
+    queryFn: async () => {
+      // Check if token exists
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      if (!token) {
+        clearAuthData()
+        return null
+      }
 
-  return useMutation({
-    mutationFn: (data) =>
-      apiPost<{ access_token: string }>(API_ENDPOINTS.AUTH_REGISTER, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth() });
+      // Try to get user data from localStorage first
+      const storedUserData = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null
+      if (storedUserData) {
+        try {
+          const user = JSON.parse(storedUserData)
+          setUser(user)
+          // Still verify with API in background but return cached data immediately
+          authAPI.me().catch(() => clearAuthData())
+          return user
+        } catch {
+          // If stored user data is invalid, proceed to fetch from API
+        }
+      }
+
+      try {
+        const user = await authAPI.me()
+        setUser(user)
+        return user
+      } catch (error) {
+        clearAuthData()
+        throw error
+        return null
+      }
     },
-    ...options,
-  });
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 }
 
-/**
- * Login user
- */
-export function useLoginMutation(
-  options?: UseMutationOptions<
-    { access_token: string },
-    APIError,
-    { email: string; password: string }
-  >,
-) {
-  const queryClient = useQueryClient();
-
+// Hook for login mutation
+export const useLogin = () => {
+  const queryClient = useQueryClient()
+  const { setUser } = useAuthStore()
+  
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<{ access_token: string }>(API_ENDPOINTS.AUTH_LOGIN, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth() });
+    mutationFn: async (credentials: LoginRequest) => {
+      const response = await authAPI.login(credentials)
+      return response
     },
-    ...options,
-  });
+    onSuccess: (data) => {
+      setUser(data.user)
+      // Invalidate and refetch user data
+      queryClient.setQueryData(authKeys.me, data.user)
+    },
+    onError: () => {
+      // Error handling will be done by the component using the hook
+    },
+  })
+}
+
+// Hook for register mutation
+export const useRegister = () => {
+  return useMutation({
+    mutationFn: async (userData: RegisterRequest) => {
+      const user = await authAPI.register(userData)
+      return user
+    },
+  })
+}
+
+// Hook for logout
+export const useLogout = () => {
+  const queryClient = useQueryClient()
+  const { logout } = useAuthStore()
+  
+  return useMutation({
+    mutationFn: async () => {
+      // No API call needed for logout, just clear local data
+      logout()
+    },
+    onSuccess: () => {
+      // Clear all queries
+      queryClient.clear()
+    },
+  })
+}
+
+// Hook for token refresh
+export const useRefreshToken = () => {
+  const queryClient = useQueryClient()
+  const { clearAuthData } = useAuthStore()
+  
+  return useMutation({
+    mutationFn: async () => {
+      const response = await authAPI.refreshToken()
+      return response
+    },
+    onSuccess: () => {
+      // Invalidate user data to refetch with new token
+      queryClient.invalidateQueries({ queryKey: authKeys.me })
+    },
+    onError: () => {
+      // If refresh fails, clear auth data
+      clearAuthData()
+      queryClient.clear()
+    },
+  })
 }

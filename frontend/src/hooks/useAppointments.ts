@@ -5,34 +5,25 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import { apiGet, apiPost, apiPatch, apiDelete, APIError } from '../api/client';
-import { API_ENDPOINTS } from '../lib/config';
+import { appointmentsAPI } from '@/api/appointments';
 import { queryKeys } from './queryKeys';
 import type {
   Appointment,
   CreateAppointment,
   UpdateAppointment,
-} from '../types/schemas';
-
-const getToken = () => {
-  const storage = localStorage.getItem('auth-storage');
-  return storage ? JSON.parse(storage).state?.token : null;
-};
+  AppointmentStats,
+} from '@/api/types';
 
 /**
  * Get all appointments (admin only)
  */
-export function useAppointments(options?: UseQueryOptions<Appointment[], APIError>) {
-  const token = getToken();
-
+export function useAppointments(
+  params?: { status?: string; teacher_id?: number; class_id?: number },
+  options?: UseQueryOptions<Appointment[], Error>
+) {
   return useQuery({
-    queryKey: queryKeys.appointments(),
-    queryFn: () =>
-      apiGet<Appointment[]>(
-        API_ENDPOINTS.ADMIN_APPOINTMENTS_LIST,
-        token || undefined,
-      ),
-    enabled: !!token,
+    queryKey: queryKeys.appointments(params),
+    queryFn: () => appointmentsAPI.getAllAppointments(params),
     ...options,
   });
 }
@@ -42,21 +33,12 @@ export function useAppointments(options?: UseQueryOptions<Appointment[], APIErro
  */
 export function useTeacherAppointments(
   teacherId: number,
-  options?: UseQueryOptions<Appointment[], APIError>,
+  options?: UseQueryOptions<Appointment[], Error>,
 ) {
-  const token = getToken();
-
   return useQuery({
     queryKey: queryKeys.teacherAppointments(teacherId),
-    queryFn: () =>
-      apiGet<Appointment[]>(
-        API_ENDPOINTS.TEACHER_APPOINTMENTS_LIST.replace(
-          ':teacherId',
-          teacherId.toString(),
-        ),
-        token || undefined,
-      ),
-    enabled: !!token && !!teacherId,
+    queryFn: () => appointmentsAPI.getTeacherAppointments(teacherId),
+    enabled: !!teacherId,
     ...options,
   });
 }
@@ -66,18 +48,25 @@ export function useTeacherAppointments(
  */
 export function useAppointment(
   id: number,
-  options?: UseQueryOptions<Appointment, APIError>,
+  options?: UseQueryOptions<Appointment, Error>,
 ) {
-  const token = getToken();
-
   return useQuery({
     queryKey: queryKeys.appointment(id),
-    queryFn: () =>
-      apiGet<Appointment>(
-        `${API_ENDPOINTS.ADMIN_APPOINTMENTS_LIST}/${id}`,
-        token || undefined,
-      ),
-    enabled: !!token && !!id,
+    queryFn: () => appointmentsAPI.getAppointmentById(id),
+    enabled: !!id,
+    ...options,
+  });
+}
+
+/**
+ * Get appointment statistics (admin only)
+ */
+export function useAppointmentStats(
+  options?: UseQueryOptions<AppointmentStats, Error>
+) {
+  return useQuery({
+    queryKey: queryKeys.appointmentStats(),
+    queryFn: () => appointmentsAPI.getAppointmentStats(),
     ...options,
   });
 }
@@ -86,18 +75,12 @@ export function useAppointment(
  * Create a new appointment (public - can be used by parents)
  */
 export function useCreateAppointmentMutation(
-  options?: UseMutationOptions<Appointment, APIError, CreateAppointment>,
+  options?: UseMutationOptions<Appointment, Error, CreateAppointment>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPost<Appointment>(
-        API_ENDPOINTS.APPOINTMENTS_CREATE,
-        data,
-        token || undefined,
-      ),
+    mutationFn: appointmentsAPI.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments() });
     },
@@ -109,19 +92,12 @@ export function useCreateAppointmentMutation(
  * Update an appointment status (admin or teacher)
  */
 export function useUpdateAppointmentMutation(
-  id: number,
-  options?: UseMutationOptions<Appointment, APIError, UpdateAppointment>,
+  options?: UseMutationOptions<Appointment, Error, { id: number; data: UpdateAppointment }>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (data) =>
-      apiPatch<Appointment>(
-        `${API_ENDPOINTS.ADMIN_APPOINTMENTS_UPDATE}/${id}`,
-        data,
-        token || undefined,
-      ),
+    mutationFn: ({ id, data }) => appointmentsAPI.updateStatus(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments() });
     },
@@ -130,20 +106,15 @@ export function useUpdateAppointmentMutation(
 }
 
 /**
- * Delete an appointment (admin or owner)
+ * Cancel an appointment (admin or teacher)
  */
-export function useDeleteAppointmentMutation(
-  options?: UseMutationOptions<void, APIError, number>,
+export function useCancelAppointmentMutation(
+  options?: UseMutationOptions<void, Error, number>,
 ) {
   const queryClient = useQueryClient();
-  const token = getToken();
 
   return useMutation({
-    mutationFn: (id) =>
-      apiDelete(
-        `${API_ENDPOINTS.ADMIN_APPOINTMENTS_DELETE}/${id}`,
-        token || undefined,
-      ),
+    mutationFn: appointmentsAPI.cancel,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments() });
     },

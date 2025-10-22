@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, AlertCircle } from 'lucide-react';
 import { useCreateSlotMutation, useUpdateSlotMutation, useDeleteSlotMutation } from '../../hooks';
-import type { AvailableSlot } from '../../types';
+import type { AvailableSlot } from '../../api/types';
 
 interface SlotManagementProps {
   teacherId: number;
@@ -47,17 +47,20 @@ export function SlotManagement({
   });
 
   const createMutation = useCreateSlotMutation(teacherId);
-  const updateMutation = useUpdateSlotMutation(teacherId, editingSlotId || 0);
+  const updateMutation = useUpdateSlotMutation(teacherId);
   const deleteMutation = useDeleteSlotMutation(teacherId);
 
   const handleCreateOrUpdate = async () => {
     try {
       if (editingSlotId) {
         await updateMutation.mutateAsync({
-          day_of_week: formData.day_of_week,
-          start_time: `${formData.start_time}:00` as unknown as string,
-          end_time: `${formData.end_time}:00` as unknown as string,
-          is_active: formData.is_active,
+          slotId: editingSlotId,
+          data: {
+            day_of_week: formData.day_of_week,
+            start_time: `${formData.start_time}:00` as unknown as string,
+            end_time: `${formData.end_time}:00` as unknown as string,
+            is_active: formData.is_active,
+          },
         } as never);
       } else {
         await createMutation.mutateAsync({

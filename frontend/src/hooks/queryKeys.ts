@@ -27,8 +27,11 @@ export const queryKeys = {
     [...queryKeys.slots(), 'teacher', teacherId] as const,
 
   // Appointments
-  appointments: () => [...queryKeys.all, 'appointments'] as const,
-  appointment: (id: number) => [...queryKeys.appointments(), id] as const,
+  appointments: (params?: any) => params 
+    ? [...queryKeys.all, 'appointments', params] as const
+    : [...queryKeys.all, 'appointments'] as const,
+  appointment: (id: number) => [...queryKeys.all, 'appointments', id] as const,
+  appointmentStats: () => [...queryKeys.all, 'appointments', 'stats'] as const,
   teacherAppointments: (teacherId: number) =>
-    [...queryKeys.appointments(), 'teacher', teacherId] as const,
+    [...queryKeys.all, 'appointments', 'teacher', teacherId] as const,
 };

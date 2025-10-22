@@ -1,118 +1,87 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import type { User } from '../types/schemas';
+import { authAPI } from '@/api/auth'
+import type { User, UserRole } from '@/api/types'
+import { create } from 'zustand'
 
 interface AuthState {
-  // State
-  token: string | null;
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-
-  // Actions
-  setToken: (token: string) => void;
-  setUser: (user: User) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  login: (user: User, token: string) => void;
-  logout: () => void;
-  clearError: () => void;
+  user: User | null
+  isAuthenticated: boolean
 }
 
-/**
- * Authentication store using Zustand
- * Persisted to localStorage for session management
- */
-export const useAuthStore = create<AuthState>()(
-  devtools(
-    persist(
-      (set) => ({
-        // Initial state
-        token: null,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
+interface AuthActions {
+  setUser: (user: User | null) => void
+  logout: () => void
+  clearAuthData: () => void
+}
 
-        // Actions
-        setToken: (token: string) =>
-          set(
-            {
-              token,
-              isAuthenticated: !!token,
-            },
-            false,
-            'setToken',
-          ),
+export type AuthStore = AuthState & AuthActions
 
-        setUser: (user: User) =>
-          set(
-            {
-              user,
-              isAuthenticated: !!user,
-            },
-            false,
-            'setUser',
-          ),
+export const useAuthStore = create<AuthStore>((set) => ({
+  // Initial state
+  user: null,
+  isAuthenticated: false,
 
-        setLoading: (loading: boolean) =>
-          set({ isLoading: loading }, false, 'setLoading'),
+  // Actions
+  setUser: (user: User | null) => {
+    // Store user data in localStorage for persistence
+    if (typeof window !== 'undefined') {
+      if (user) {
+        localStorage.setItem('user_data', JSON.stringify(user))
+      } else {
+        localStorage.removeItem('user_data')
+      }
+    }
 
-        setError: (error: string | null) =>
-          set({ error }, false, 'setError'),
+    set({
+      user,
+      isAuthenticated: !!user,
+    })
+  },
 
-        login: (user: User, token: string) =>
-          set(
-            {
-              user,
-              token,
-              isAuthenticated: true,
-              error: null,
-            },
-            false,
-            'login',
-          ),
+  logout: () => {
+    // Clear localStorage first
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_data')
+      localStorage.removeItem('auth_token')
+    }
+    
+    // Clear API token
+    authAPI.logout()
+    
+    // Update auth state
+    set({
+      user: null,
+      isAuthenticated: false,
+    })
+  },
 
-        logout: () =>
-          set(
-            {
-              token: null,
-              user: null,
-              isAuthenticated: false,
-              error: null,
-            },
-            false,
-            'logout',
-          ),
+  clearAuthData: () => {
+    // Clear user data from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_data')
+    }
+    set({
+      user: null,
+      isAuthenticated: false,
+    })
+  },
+}))
 
-        clearError: () =>
-          set({ error: null }, false, 'clearError'),
-      }),
-      {
-        name: 'auth-storage',
-        // Only persist token and user
-        partialize: (state) => ({
-          token: state.token,
-          user: state.user,
-          isAuthenticated: state.isAuthenticated,
-        }),
-      },
-    ),
-    {
-      name: 'AuthStore',
-    },
-  ),
-);
+// Selectors
+export const useUser = () => useAuthStore((state) => state.user)
+export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated)
 
-export type AuthContext = ReturnType<typeof useAuthStore>;
+// Role-based helpers
+export const useUserRole = (): UserRole | null => {
+  const user = useUser()
+  return user?.role || null
+}
 
-/**
- * Selector hooks for better performance and type safety
- */
-export const useAuthToken = () => useAuthStore((state) => state.token);
-export const useAuthUser = () => useAuthStore((state) => state.user);
-export const useIsAuthenticated = () =>
-  useAuthStore((state) => state.isAuthenticated);
-export const useIsLoading = () => useAuthStore((state) => state.isLoading);
-export const useAuthError = () => useAuthStore((state) => state.error);
+export const useIsAdmin = () => {
+  const role = useUserRole()
+  return role === 'admin'
+}
+
+export const useIsTeacher = () => {
+  const role = useUserRole()
+  return role === 'teacher'
+}

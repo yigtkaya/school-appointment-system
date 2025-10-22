@@ -1,12 +1,13 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { useAuthStore } from './store/auth'
 import { routeTree } from './routeTree.gen'
+import type { RouterContext } from './routes/__root'
 
 const router = createRouter({
   routeTree,
   context: {
-    authentication: undefined!,
-  },
+    auth: undefined!,
+  } as RouterContext,
 })
 
 declare module '@tanstack/react-router' {
@@ -22,10 +23,9 @@ function App() {
     <RouterProvider
       router={router}
       context={{
-        authentication: {
+        auth: {
           isAuthenticated: authStore.isAuthenticated,
           user: authStore.user,
-          token: authStore.token,
         },
       }}
     />

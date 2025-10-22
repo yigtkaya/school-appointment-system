@@ -1,8 +1,8 @@
 
 import { useNavigate } from '@tanstack/react-router'
-import { useLoginMutation } from '@/hooks'
+import { useLogin } from '@/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { LoginSchema } from "@/types/schemas";
+import { LoginSchema } from "@/lib/schemas";
 import { useForm } from 'react-hook-form';
 
 type LoginFormData = {
@@ -12,7 +12,7 @@ type LoginFormData = {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const loginMutation = useLoginMutation()
+  const loginMutation = useLogin()
   
   const {
     register,

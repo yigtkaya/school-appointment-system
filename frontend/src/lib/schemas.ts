@@ -1,3 +1,4 @@
+import { UserRole } from '@/api/types';
 import { z } from 'zod';
 
 // Auth schemas
@@ -11,6 +12,7 @@ export const RegisterSchema = z.object({
   email: z.email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   branch: z.string().optional(),
+  role: z.enum([UserRole.Admin, UserRole.Teacher]).default(UserRole.Teacher),
 });
 
 // Class schemas

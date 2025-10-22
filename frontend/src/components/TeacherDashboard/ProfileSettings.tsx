@@ -1,5 +1,5 @@
 import { Mail, User as UserIcon, BookOpen } from 'lucide-react';
-import type { User } from '../../types';
+import type { User } from '../../api/types';
 
 interface ProfileSettingsProps {
   teacher: User;

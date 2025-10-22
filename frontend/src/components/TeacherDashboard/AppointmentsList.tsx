@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { CheckCircle, XCircle, Trash2, AlertCircle } from 'lucide-react';
-import type { Appointment } from '../../types';
+import type { Appointment } from '../../api/types';
 import { useUpdateAppointmentMutation } from '@/hooks/useAppointments';
 
 
 interface AppointmentsListProps {
-  teacherId: number;
   appointments: Appointment[];
   isLoading: boolean;
   onAppointmentUpdate: () => void;
@@ -22,7 +21,6 @@ interface FilterType {
  * List of appointments with approval/rejection actions
  */
 export function AppointmentsList({
-  teacherId,
   appointments,
   isLoading,
   onAppointmentUpdate,
@@ -34,7 +32,7 @@ export function AppointmentsList({
     cancelled: false,
   });
 
-    const updateMutation = useUpdateAppointmentMutation(teacherId);
+    const updateMutation = useUpdateAppointmentMutation();
 
   // Filter appointments based on selected statuses
   const filteredAppointments = appointments.filter(
@@ -49,7 +47,10 @@ export function AppointmentsList({
   const handleApprove = async (appointmentId: number) => {
     try {
       await updateMutation.mutateAsync({
-        status: 'confirmed',
+        id: appointmentId,
+        data: {
+          status: 'confirmed',
+        },
       });
       onAppointmentUpdate();
     } catch (error) {
@@ -60,7 +61,10 @@ export function AppointmentsList({
   const handleReject = async (appointmentId: number) => {
     try {
       await updateMutation.mutateAsync({
-        status: 'rejected',
+        id: appointmentId,
+        data: {
+          status: 'rejected',
+        },
       });
       onAppointmentUpdate();
     } catch (error) {
@@ -72,7 +76,10 @@ export function AppointmentsList({
     if (confirm('Are you sure you want to cancel this appointment?')) {
       try {
         await updateMutation.mutateAsync({
-          status: 'cancelled',
+          id: appointmentId,
+          data: {
+            status: 'cancelled',
+          },
         });
         onAppointmentUpdate();
       } catch (error) {
