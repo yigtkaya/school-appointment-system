@@ -11,6 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=False)  # For username-based login
     password_hash = Column(String, nullable=False)
     branch = Column(String, nullable=True)  # e.g., "Primary", "Secondary"
     role = Column(Enum(UserRole), default=UserRole.TEACHER, nullable=False)

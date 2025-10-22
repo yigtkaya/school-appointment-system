@@ -9,6 +9,7 @@ type RegisterFormData = {
   email: string
   password: string
   name: string
+  username: string
   branch?: string
 }
 
@@ -37,11 +38,11 @@ export default function RegisterPage() {
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-lg shadow-2xl p-8">
           <div className="text-center mb-8 pb-6 border-b-2 border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Giriş Yapınız</h1>
-            <h2 className="text-sm font-semibold text-gray-600">Lütfen giriş bilgilerinizi girin  </h2>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Ol</h1>
+            <h2 className="text-sm font-semibold text-gray-600">Lütfen kayıt bilgilerinizi girin  </h2>
           </div>
           
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {registerMutation.error && (
               <div className="bg-red-50 border border-red-300 rounded-lg p-4">
                 <p className="text-sm text-red-700">
@@ -50,7 +51,7 @@ export default function RegisterPage() {
               </div>
             )}
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Ad - Soyad
@@ -66,8 +67,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-
-              
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -77,10 +76,26 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  placeholder="Email"
+                  placeholder="ornek@example.com"
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                  Kullanıcı Adı
+                </label>
+                <input
+                  {...register('username')}
+                  type="text"
+                  autoComplete="username"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  placeholder="ozge.cavlak (harfler, sayılar, nokta, tire, alt çizgi)"
+                />
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
                 )}
               </div>
               
@@ -91,12 +106,27 @@ export default function RegisterPage() {
                 <input
                   {...register('password')}
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
-                  placeholder="Şifre"
+                  placeholder="Şifre (en az 6 karakter)"
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-1">
+                  Şube (İsteğe Bağlı)
+                </label>
+                <input
+                  {...register('branch')}
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  placeholder="Örn: Başarı"
+                />
+                {errors.branch && (
+                  <p className="mt-1 text-sm text-red-600">{errors.branch.message}</p>
                 )}
               </div>
             </div>
@@ -104,7 +134,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={registerMutation.isPending}
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-6 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {registerMutation.isPending ? 'Kayıt Yapılıyor...' : 'Kayıt Ol'}
             </button>
@@ -112,10 +142,23 @@ export default function RegisterPage() {
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-600 text-center leading-relaxed">
-              <span className="font-semibold block mb-2 text-gray-700">Demo Hesap Bilgileri</span>
-              <span className="text-blue-600 font-medium">Admin</span> admin@school.com<br />
-              <span className="text-red-600 font-medium">Öğretmen</span> teacher@school.com<br />
-              <span className="block mt-2"><span className="font-semibold text-gray-700">Şifre</span> password123</span>
+              <span className="font-semibold block mb-3 text-gray-700">Demo Hesap Bilgileri</span>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-blue-600 font-medium">Admin</span><br />
+                  Kullanıcı Adı: <span className="font-mono bg-gray-100 px-1 rounded">admin</span><br />
+                  Email: <span className="font-mono bg-gray-100 px-1 rounded">admin@school.com</span>
+                </div>
+                <div>
+                  <span className="text-red-600 font-medium">Öğretmen</span><br />
+                  Kullanıcı Adı: <span className="font-mono bg-gray-100 px-1 rounded">ozge.cavlak</span><br />
+                  Email: <span className="font-mono bg-gray-100 px-1 rounded">teacher@school.com</span>
+                </div>
+                <div className="pt-2 border-t border-gray-300">
+                  <span className="font-semibold text-gray-700">Şifre</span><br />
+                  <span className="font-mono bg-gray-100 px-1 rounded">password123</span>
+                </div>
+              </div>
             </p>
           </div>
         </div>

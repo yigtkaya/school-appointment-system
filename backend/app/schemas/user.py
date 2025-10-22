@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     """Base user schema."""
     name: str
     email: EmailStr
+    username: str  # Username for login
     branch: Optional[str] = None
 
 
@@ -41,6 +42,6 @@ class Token(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login request schema."""
-    email: EmailStr
+    """Login request schema - accepts username or email."""
+    username_or_email: str  # Can be username (e.g., "ozge.cavlak") or email (e.g., "ozge@example.com")
     password: str

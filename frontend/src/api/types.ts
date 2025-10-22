@@ -4,12 +4,13 @@
 export interface RegisterRequest {
   name: string;
   email: string;
+  username: string;
   password: string;
   branch?: string;
 }
 
 export interface LoginRequest {
-  email: string;
+  username_or_email: string;
   password: string;
 }
 
@@ -26,6 +27,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  username: string;
   branch?: string | null;
   role: UserRole;
   require_approval: number;

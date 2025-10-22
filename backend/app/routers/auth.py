@@ -21,11 +21,19 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new teacher account."""
     
     # Check if email already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
+    existing_email = db.query(User).filter(User.email == user_data.email).first()
+    if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
+        )
+    
+    # Check if username already exists
+    existing_username = db.query(User).filter(User.username == user_data.username).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken",
         )
     
     # Create new user
@@ -33,6 +41,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         name=user_data.name,
         email=user_data.email,
+        username=user_data.username,
         password_hash=hashed_password,
         branch=user_data.branch,
         role=UserRole.TEACHER,  # New registrations are teachers by default
@@ -47,14 +56,23 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
-    """Login and get JWT token."""
+    """Login and get JWT token.
     
-    # Find user by email
-    user = db.query(User).filter(User.email == credentials.email).first()
+    Accepts either:
+    - username (e.g., "ozge.cavlak")
+    - email (e.g., "ozge@example.com")
+    """
+    
+    # Find user by username or email
+    user = db.query(User).filter(
+        (User.username == credentials.username_or_email) | 
+        (User.email == credentials.username_or_email)
+    ).first()
+    
     if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Invalid username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

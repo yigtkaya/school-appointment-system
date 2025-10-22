@@ -3,13 +3,27 @@ import { z } from 'zod';
 
 // Auth schemas
 export const LoginSchema = z.object({
-  email: z.email('Invalid email address'),
+  username_or_email: z.string()
+    .min(1, 'Username or email is required')
+    .refine(
+      (value) => {
+        // Allow either a valid email or a username (alphanumeric with dots, hyphens, underscores)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+        return emailRegex.test(value) || usernameRegex.test(value);
+      },
+      'Enter a valid username (e.g., ozge.cavlak) or email address'
+    ),
   password: z.string().min(1, 'Password is required'),
 });
 
 export const RegisterSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Invalid email address'),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .regex(/^[a-zA-Z0-9._-]+$/, 'Username can only contain letters, numbers, dots, hyphens, and underscores'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   branch: z.string().optional(),
   role: z.enum([UserRole.Admin, UserRole.Teacher]).default(UserRole.Teacher),
