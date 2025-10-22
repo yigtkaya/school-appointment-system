@@ -14,7 +14,6 @@ export {
   useClass,
   useClassTeachers,
   useCreateClassMutation,
-  useAdminCreateClassMutation,
   useUpdateClassMutation,
   useDeleteClassMutation,
   useAssignTeacherMutation,
@@ -26,7 +25,6 @@ export {
   useStudent,
   useStudentsByClass,
   useCreateStudentMutation,
-  useAdminCreateStudentMutation,
   useUpdateStudentMutation,
   useDeleteStudentMutation,
   useAvailableStudents,
@@ -66,6 +64,30 @@ export {
   useApproveTeacherMutation,
   useRequireApprovalMutation,
 } from './useAdminUsers';
+
+// Admin Classes hooks
+export {
+  useAdminClasses,
+  useAdminClass,
+  useAdminCreateClassMutation,
+  useAdminUpdateClassMutation,
+  useAdminDeleteClassMutation,
+} from './useAdminClasses';
+
+// Admin Students hooks
+export {
+  useAdminStudents,
+  useAdminCreateStudentMutation,
+  useAdminUpdateStudentMutation,
+  useAdminDeleteStudentMutation,
+} from './useAdminStudents';
+
+// Admin Appointments hooks
+export {
+  useAdminAllAppointments,
+  useAdminStats,
+  useAdminAppointment,
+} from './useAdminAppointments';
 
 // Query keys
 export { queryKeys } from './queryKeys';

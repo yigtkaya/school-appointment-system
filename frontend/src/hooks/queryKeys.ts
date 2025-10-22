@@ -34,4 +34,13 @@ export const queryKeys = {
   appointmentStats: () => [...queryKeys.all, 'appointments', 'stats'] as const,
   teacherAppointments: (teacherId: number) =>
     [...queryKeys.all, 'appointments', 'teacher', teacherId] as const,
+
+  // Admin
+  admin: () => [...queryKeys.all, 'admin'] as const,
+  adminClasses: () => [...queryKeys.admin(), 'classes'] as const,
+  adminStudents: () => [...queryKeys.admin(), 'students'] as const,
+  adminAppointments: (params?: any) => params 
+    ? [...queryKeys.admin(), 'appointments', params] as const
+    : [...queryKeys.admin(), 'appointments'] as const,
+  adminStats: () => [...queryKeys.admin(), 'stats'] as const,
 };

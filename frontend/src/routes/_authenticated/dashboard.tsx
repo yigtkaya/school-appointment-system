@@ -1,4 +1,4 @@
-import IndexPage from "@/pages"
+import { AdminDashboard } from "@/components/AdminDashboard/AdminDashboard"
 import TeacherDashboard from "@/pages/TeacherDashboard"
 import { useAuthStore } from "@/store/auth"
 import { createFileRoute } from "@tanstack/react-router"
@@ -17,7 +17,7 @@ function Dashboard() {
 
   switch (user.role) {
     case 'admin':
-      return <IndexPage />
+      return <AdminDashboard />
     case 'teacher':
       return <TeacherDashboard />
     default:
