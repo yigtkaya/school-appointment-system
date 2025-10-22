@@ -1,8 +1,8 @@
-import { Calendar, Clock, User, Users } from 'lucide-react';
+import { Calendar, Clock, User, Users, Grid3x3 } from 'lucide-react';
 
 interface DashboardTabsProps {
-  activeTab: 'appointments' | 'slots' | 'students' | 'profile';
-  onTabChange: (tab: 'appointments' | 'slots' | 'students' | 'profile') => void;
+  activeTab: 'appointments' | 'schedule' | 'slots' | 'students' | 'profile';
+  onTabChange: (tab: 'appointments' | 'schedule' | 'slots' | 'students' | 'profile') => void;
   pendingCount: number;
 }
 
@@ -16,6 +16,11 @@ export function DashboardTabs({ activeTab, onTabChange, pendingCount }: Dashboar
       label: 'Appointments',
       icon: Calendar,
       badge: pendingCount > 0 ? pendingCount : null,
+    },
+    {
+      id: 'schedule' as const,
+      label: 'Schedule',
+      icon: Grid3x3,
     },
     {
       id: 'slots' as const,
