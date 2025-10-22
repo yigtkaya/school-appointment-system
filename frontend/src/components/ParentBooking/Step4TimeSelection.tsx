@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTeacherAvailableDays, useTeacherAvailableTimes } from '@/hooks/useSlots';
+import { useTeacherAvailableDates, useTeacherAvailableTimes } from '@/hooks/useSlots';
 import type { AvailableTime } from '@/api/types';
 
 interface Step4Props {
@@ -9,35 +9,14 @@ interface Step4Props {
   onSelectDateTime: (date: string, time: AvailableTime) => void;
 }
 
-const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-// Convert day_of_week (0=Mon, 6=Sun) to full date for display
-function getNextDateForDayOfWeek(dayOfWeek: number): string {
-  const today = new Date();
-  const currentDay = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  
-  // Adjust: backend uses 0=Mon, 6=Sun; JS uses 0=Sun, 6=Sat
-  const targetDay = dayOfWeek === 6 ? 0 : dayOfWeek + 1; // Convert to JS format
-  
-  let daysAhead = targetDay - currentDay;
-  if (daysAhead <= 0) {
-    daysAhead += 7; // Next week if the day has already happened this week
-  }
-  
-  const nextDate = new Date(today);
-  nextDate.setDate(today.getDate() + daysAhead);
-  
-  return nextDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-}
-
 export function Step4TimeSelection({
   teacherId,
   selectedDate,
   selectedTime,
   onSelectDateTime,
 }: Step4Props) {
-  const { data: availableDays, isLoading: daysLoading, isError: daysError } =
-    useTeacherAvailableDays(teacherId || 0);
+  const { data: availableDates, isLoading: datesLoading, isError: datesError } =
+    useTeacherAvailableDates(teacherId || 0);
 
   const { data: availableTimes, isLoading: timesLoading } = useTeacherAvailableTimes(
     teacherId || 0,
@@ -45,8 +24,8 @@ export function Step4TimeSelection({
   );
 
   const [displayDate, setDisplayDate] = useState<string>(
-    selectedDate || (availableDays && availableDays.length > 0 
-      ? getNextDateForDayOfWeek(availableDays[0])
+    selectedDate || (availableDates && availableDates.length > 0 
+      ? availableDates[0]
       : '')
   );
 
@@ -58,7 +37,7 @@ export function Step4TimeSelection({
     );
   }
 
-  if (daysLoading) {
+  if (datesLoading) {
     return (
       <div className="p-6 bg-white rounded-lg shadow">
         <div className="animate-pulse">
@@ -73,15 +52,15 @@ export function Step4TimeSelection({
     );
   }
 
-  if (daysError) {
+  if (datesError) {
     return (
       <div className="p-6 bg-white rounded-lg shadow border border-red-200">
-        <p className="text-red-600">Error loading available days</p>
+        <p className="text-red-600">Error loading available dates</p>
       </div>
     );
   }
 
-  if (!availableDays || availableDays.length === 0) {
+  if (!availableDates || availableDates.length === 0) {
     return (
       <div className="p-6 bg-white rounded-lg shadow border border-yellow-200">
         <p className="text-yellow-700">Teacher has no available time slots</p>
@@ -106,15 +85,14 @@ export function Step4TimeSelection({
           Select a Date
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          {availableDays.map((dayOfWeek) => {
-            const nextDate = getNextDateForDayOfWeek(dayOfWeek);
-            const dateObj = new Date(nextDate);
-            const isSelected = displayDate === nextDate;
+          {availableDates.map((date) => {
+            const dateObj = new Date(date);
+            const isSelected = displayDate === date;
 
             return (
               <button
-                key={dayOfWeek}
-                onClick={() => handleDateChange(nextDate)}
+                key={date}
+                onClick={() => handleDateChange(date)}
                 className={`p-3 rounded-lg border-2 text-center transition-all ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
@@ -122,7 +100,9 @@ export function Step4TimeSelection({
                 }`}
               >
                 <div className="font-semibold text-gray-800">
-                  {DAY_NAMES[dayOfWeek]}
+                  {dateObj.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                  })}
                 </div>
                 <div className="text-sm text-gray-600">
                   {dateObj.toLocaleDateString('en-US', {

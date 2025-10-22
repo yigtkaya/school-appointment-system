@@ -7,14 +7,14 @@ export const slotsAPI = {
     return apiClient.get<AvailableSlot[]>(`/api/teachers/${teacherId}/slots`)
   },
 
-  // Get available days for a teacher
-  async getAvailableDays(teacherId: number): Promise<number[]> {
-    return apiClient.get<number[]>(`/api/teachers/${teacherId}/available-days`)
+  // Get available dates for a teacher
+  async getAvailableDates(teacherId: number): Promise<string[]> {
+    return apiClient.get<string[]>(`/api/teachers/${teacherId}/available-dates`)
   },
 
   // Get available times for a specific date
   async getAvailableTimes(teacherId: number, date: string): Promise<AvailableTime[]> {
-    return apiClient.get<AvailableTime[]>(`/api/teachers/${teacherId}/available-times?date=${date}`)
+    return apiClient.get<AvailableTime[]>(`/api/teachers/${teacherId}/available-times?date_str=${date}`)
   },
 
   // Teacher endpoints (authenticated)

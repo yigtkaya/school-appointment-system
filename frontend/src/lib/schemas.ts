@@ -43,9 +43,9 @@ export const StudentSchema = z.object({
 
 // Slot schemas
 export const AvailableSlotSchema = z.object({
-  day_of_week: z.number().min(0).max(6),
-  start_time: z.string().regex(/^\d{2}:\d{2}:\d{2}$/, 'Invalid time format'),
-  end_time: z.string().regex(/^\d{2}:\d{2}:\d{2}$/, 'Invalid time format'),
+  date: z.string().date('Invalid date format'),
+  start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time format'),
+  end_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time format'),
   timezone: z.string().default('UTC'),
   is_active: z.boolean().default(true),
 });

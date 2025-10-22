@@ -29,7 +29,7 @@ export interface User {
   email: string;
   username: string;
   branch?: string | null;
-  role: UserRole;
+  role: UserRole;   
   require_approval: number;
   created_at: string;
 }
@@ -95,8 +95,7 @@ export interface UpdateStudent {
 export interface AvailableSlot {
   id: number;
   teacher_id: number;
-  day_of_week: number;
-  date?: string | null;
+  date: string;  // ISO date format (YYYY-MM-DD)
   start_time: string;
   end_time: string;
   timezone: string;
@@ -106,8 +105,7 @@ export interface AvailableSlot {
 
 export interface CreateAvailableSlot {
   teacher_id?: number;
-  day_of_week: number;
-  date?: string;
+  date: string;  // ISO date format (YYYY-MM-DD)
   start_time: string;
   end_time: string;
   timezone?: string;
@@ -115,8 +113,7 @@ export interface CreateAvailableSlot {
 }
 
 export interface UpdateAvailableSlot {
-  day_of_week?: number;
-  date?: string;
+  date?: string;  // ISO date format (YYYY-MM-DD)
   start_time?: string;
   end_time?: string;
   timezone?: string;

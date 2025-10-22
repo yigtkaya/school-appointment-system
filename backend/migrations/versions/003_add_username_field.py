@@ -1,7 +1,7 @@
 """Add username field to users table
 
 Revision ID: 003_add_username_field
-Revises: 002_require_approval_boolean
+Revises: 002_require_approval_bool
 Create Date: 2025-10-22 12:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '003_add_username_field'
-down_revision = '002_require_approval_boolean'
+down_revision = '002_require_approval_bool'
 branch_labels = None
 depends_on = None
 
@@ -20,15 +20,11 @@ def upgrade() -> None:
     # Add username column (nullable first)
     op.add_column('users', sa.Column('username', sa.String(), nullable=True))
     
-    # Create a migration script to populate existing users with generated usernames
-    # This is a simplified approach - in production you'd handle this more carefully
-    bind = op.get_bind()
-    
     # For existing users, generate usernames from email (take part before @)
-    # This is raw SQL to handle the migration
-    connection = bind.connection if hasattr(bind, 'connection') else bind
-    connection.execute(sa.text(
-        """UPDATE users SET username = SUBSTRING_INDEX(email, '@', 1) 
+    # PostgreSQL syntax: SPLIT_PART(email, '@', 1)
+    bind = op.get_bind()
+    bind.execute(sa.text(
+        """UPDATE users SET username = SPLIT_PART(email, '@', 1) 
            WHERE username IS NULL"""
     ))
     

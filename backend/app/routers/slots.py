@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, date
 
 from app.db.database import get_db
 from app.models.available_slot import AvailableSlot
@@ -59,7 +59,6 @@ async def create_slot(
     
     new_slot = AvailableSlot(
         teacher_id=teacher_id,
-        day_of_week=slot_data.day_of_week,
         date=slot_data.date,
         start_time=slot_data.start_time,
         end_time=slot_data.end_time,
@@ -102,8 +101,8 @@ async def update_slot(
         )
     
     # Update fields
-    if slot_data.day_of_week is not None:
-        slot.day_of_week = slot_data.day_of_week
+    if slot_data.date is not None:
+        slot.date = slot_data.date
     if slot_data.start_time is not None:
         slot.start_time = slot_data.start_time
     if slot_data.end_time is not None:
@@ -149,9 +148,9 @@ async def delete_slot(
     db.commit()
 
 
-@router.get("/{teacher_id}/available-days", response_model=List[int])
-async def get_available_days(teacher_id: int, db: Session = Depends(get_db)):
-    """Get days of week when teacher has available slots."""
+@router.get("/{teacher_id}/available-dates", response_model=List[str])
+async def get_available_dates(teacher_id: int, db: Session = Depends(get_db)):
+    """Get dates when teacher has available slots."""
     # Verify teacher exists
     teacher = db.query(User).filter(User.id == teacher_id).first()
     if not teacher:
@@ -160,19 +159,19 @@ async def get_available_days(teacher_id: int, db: Session = Depends(get_db)):
             detail="Teacher not found",
         )
     
-    # Get unique days with active slots
-    available_days = db.query(AvailableSlot.day_of_week).filter(
+    # Get unique dates with active slots
+    available_dates = db.query(AvailableSlot.date).filter(
         AvailableSlot.teacher_id == teacher_id,
         AvailableSlot.is_active == True,
     ).distinct().all()
     
-    return [day[0] for day in available_days]
+    return [date_tuple[0].isoformat() for date_tuple in available_dates]
 
 
 @router.get("/{teacher_id}/available-times")
 async def get_available_times(
     teacher_id: int,
-    date: datetime,
+    date_str: str,
     db: Session = Depends(get_db),
 ):
     """Get available time slots for a specific date."""
@@ -184,12 +183,19 @@ async def get_available_times(
             detail="Teacher not found",
         )
     
-    day_of_week = date.weekday()
+    # Parse date string
+    try:
+        slot_date = datetime.fromisoformat(date_str).date()
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date format. Use ISO format (YYYY-MM-DD)",
+        )
     
-    # Get active slots for this day
+    # Get active slots for this date
     slots = db.query(AvailableSlot).filter(
         AvailableSlot.teacher_id == teacher_id,
-        AvailableSlot.day_of_week == day_of_week,
+        AvailableSlot.date == slot_date,
         AvailableSlot.is_active == True,
     ).all()
     

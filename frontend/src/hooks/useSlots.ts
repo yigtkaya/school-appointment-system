@@ -30,15 +30,15 @@ export function useTeacherSlots(
 }
 
 /**
- * Get available days for a teacher
+ * Get available dates for a teacher
  */
-export function useTeacherAvailableDays(
+export function useTeacherAvailableDates(
   teacherId: number,
-  options?: UseQueryOptions<number[], Error>,
+  options?: UseQueryOptions<string[], Error>,
 ) {
   return useQuery({
-    queryKey: [...queryKeys.teacherSlots(teacherId), 'days'],
-    queryFn: () => slotsAPI.getAvailableDays(teacherId),
+    queryKey: [...queryKeys.teacherSlots(teacherId), 'dates'],
+    queryFn: () => slotsAPI.getAvailableDates(teacherId),
     enabled: !!teacherId,
     ...options,
   });

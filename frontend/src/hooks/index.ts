@@ -36,7 +36,7 @@ export {
 // Slots hooks
 export {
   useTeacherSlots,
-  useTeacherAvailableDays,
+  useTeacherAvailableDates,
   useTeacherAvailableTimes,
   useCreateSlotMutation,
   useUpdateSlotMutation,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Time, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Time, ForeignKey, Boolean, Date
 from datetime import datetime, time
 from app.db.database import Base
 from sqlalchemy.orm import relationship
@@ -10,8 +10,7 @@ class AvailableSlot(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    day_of_week = Column(Integer, nullable=False)  # 0=Monday, 6=Sunday
-    date = Column(DateTime, nullable=True)  # Optional specific date
+    date = Column(Date, nullable=False)  # Specific date for the slot
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     timezone = Column(String, default="UTC", nullable=False)
@@ -22,4 +21,4 @@ class AvailableSlot(Base):
     teacher = relationship("User", backref="available_slots")
     
     def __repr__(self):
-        return f"<AvailableSlot(id={self.id}, teacher_id={self.teacher_id}, day={self.day_of_week})>"
+        return f"<AvailableSlot(id={self.id}, teacher_id={self.teacher_id}, date={self.date})>"
