@@ -104,3 +104,70 @@ export function useDeleteStudentMutation(
     ...options,
   });
 }
+
+/**
+ * Get all available students (for teacher combobox)
+ */
+export function useAvailableStudents(
+  options?: UseQueryOptions<Student[], Error>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.students(), 'available'],
+    queryFn: () => studentsAPI.getAllAvailable(),
+    ...options,
+  });
+}
+
+/**
+ * Add existing student to a class (teacher)
+ */
+export function useAddStudentToClassMutation(
+  options?: UseMutationOptions<Student, Error, { classId: number; studentId: number }>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ classId, studentId }) => studentsAPI.addToClass(classId, studentId),
+    onSuccess: (_, { classId }) => {
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.students(), 'class', classId] });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Create new student and add to class (teacher)
+ */
+export function useCreateStudentTeacherMutation(
+  options?: UseMutationOptions<Student, Error, CreateStudent>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: studentsAPI.createByTeacher,
+    onSuccess: (newStudent) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.students() });
+      queryClient.invalidateQueries({ 
+        queryKey: [...queryKeys.students(), 'class', newStudent.class_id] 
+      });
+    },
+    ...options,
+  });
+}
+
+/**
+ * Remove student from class (teacher)
+ */
+export function useRemoveStudentFromClassMutation(
+  options?: UseMutationOptions<void, Error, { classId: number; studentId: number }>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ classId, studentId }) => studentsAPI.removeFromClass(classId, studentId),
+    onSuccess: (_, { classId }) => {
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.students(), 'class', classId] });
+    },
+    ...options,
+  });
+}

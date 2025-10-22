@@ -15,7 +15,7 @@ from app.schemas.class_student import (
     TeacherClassCreate,
     TeacherClassResponse,
 )
-from app.core.dependencies import get_current_admin
+from app.core.dependencies import get_current_admin, get_current_teacher
 
 router = APIRouter(prefix="/api", tags=["classes", "students"])
 
@@ -174,3 +174,167 @@ async def assign_teacher_to_class(
     db.commit()
     db.refresh(new_tc)
     return new_tc
+
+
+# ==================== Teacher Student Management ====================
+
+@router.get("/teacher/classes", response_model=List[ClassResponse])
+async def get_teacher_classes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Get all classes assigned to current teacher."""
+    teacher_classes = db.query(TeacherClass).filter(
+        TeacherClass.teacher_id == current_user.id
+    ).all()
+    
+    classes = [tc.class_ for tc in teacher_classes]
+    return classes
+
+
+@router.get("/teacher/classes/{class_id}/students", response_model=List[StudentResponse])
+async def get_teacher_class_students(
+    class_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Get students in a class taught by current teacher."""
+    # Verify teacher is assigned to this class
+    tc = db.query(TeacherClass).filter(
+        TeacherClass.teacher_id == current_user.id,
+        TeacherClass.class_id == class_id,
+    ).first()
+    
+    if not tc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not assigned to this class",
+        )
+    
+    students = db.query(Student).filter(Student.class_id == class_id).all()
+    return students
+
+
+@router.get("/teacher/students/available", response_model=List[StudentResponse])
+async def get_all_available_students(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Get all students (for combobox selection across all classes)."""
+    students = db.query(Student).all()
+    return students
+
+
+@router.post("/teacher/classes/{class_id}/students/{student_id}", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
+async def add_student_to_teacher_class(
+    class_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Add an existing student to a class (teacher must be assigned to class)."""
+    # Verify teacher is assigned to this class
+    tc = db.query(TeacherClass).filter(
+        TeacherClass.teacher_id == current_user.id,
+        TeacherClass.class_id == class_id,
+    ).first()
+    
+    if not tc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not assigned to this class",
+        )
+    
+    # Verify student exists
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found",
+        )
+    
+    # Verify class exists
+    class_obj = db.query(Class).filter(Class.id == class_id).first()
+    if not class_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Class not found",
+        )
+    
+    # Update student's class
+    student.class_id = class_id
+    db.commit()
+    db.refresh(student)
+    return student
+
+
+@router.post("/teacher/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
+async def create_and_add_student(
+    student_data: StudentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Create a new student and add to a class (teacher must be assigned to class)."""
+    # Verify teacher is assigned to this class
+    tc = db.query(TeacherClass).filter(
+        TeacherClass.teacher_id == current_user.id,
+        TeacherClass.class_id == student_data.class_id,
+    ).first()
+    
+    if not tc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not assigned to this class",
+        )
+    
+    # Verify class exists
+    class_obj = db.query(Class).filter(Class.id == student_data.class_id).first()
+    if not class_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Class not found",
+        )
+    
+    # Create new student
+    new_student = Student(name=student_data.name, class_id=student_data.class_id)
+    db.add(new_student)
+    db.commit()
+    db.refresh(new_student)
+    return new_student
+
+
+@router.delete("/teacher/classes/{class_id}/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_student_from_teacher_class(
+    class_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_teacher),
+):
+    """Remove a student from a class (teacher must be assigned to class)."""
+    # Verify teacher is assigned to this class
+    tc = db.query(TeacherClass).filter(
+        TeacherClass.teacher_id == current_user.id,
+        TeacherClass.class_id == class_id,
+    ).first()
+    
+    if not tc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not assigned to this class",
+        )
+    
+    # Verify student exists and belongs to this class
+    student = db.query(Student).filter(
+        Student.id == student_id,
+        Student.class_id == class_id,
+    ).first()
+    
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found in this class",
+        )
+    
+    db.delete(student)
+    db.commit()
+

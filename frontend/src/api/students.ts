@@ -12,6 +12,11 @@ export const studentsAPI = {
     return apiClient.get<Student[]>(`/api/classes/${classId}/students`)
   },
 
+  // Get all available students (for teacher combobox)
+  async getAllAvailable(): Promise<Student[]> {
+    return apiClient.get<Student[]>('/api/teacher/students/available')
+  },
+
   // Admin endpoints
   async create(data: CreateStudent): Promise<Student> {
     return apiClient.post<Student>('/api/students', data)
@@ -27,5 +32,21 @@ export const studentsAPI = {
 
   async adminDelete(id: number): Promise<void> {
     return apiClient.delete<void>(`/api/admin/students/${id}`)
-  }
+  },
+
+  // Teacher endpoints - manage students in their classes
+  async addToClass(classId: number, studentId: number): Promise<Student> {
+    return apiClient.post<Student>(
+      `/api/teacher/classes/${classId}/students/${studentId}`,
+      {}
+    )
+  },
+
+  async createByTeacher(data: CreateStudent): Promise<Student> {
+    return apiClient.post<Student>('/api/teacher/students', data)
+  },
+
+  async removeFromClass(classId: number, studentId: number): Promise<void> {
+    return apiClient.delete<void>(`/api/teacher/classes/${classId}/students/${studentId}`)
+  },
 }

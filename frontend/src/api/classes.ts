@@ -35,5 +35,10 @@ export const classesAPI = {
   // Teacher-Class relationships
   async assignTeacher(teacherId: number, classId: number): Promise<TeacherClassAssignment> {
     return apiClient.post<TeacherClassAssignment>('/api/teacher-classes', { teacher_id: teacherId, class_id: classId })
+  },
+
+  // Teacher endpoints
+  async getTeacherClasses(): Promise<Class[]> {
+    return apiClient.get<Class[]>('/api/teacher/classes')
   }
 }

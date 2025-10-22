@@ -132,3 +132,14 @@ export function useAssignTeacherMutation(
     ...options,
   });
 }
+
+/**
+ * Get classes assigned to current teacher
+ */
+export function useTeacherClasses(options?: UseQueryOptions<Class[], Error>) {
+  return useQuery({
+    queryKey: [...queryKeys.classes(), 'teacher'],
+    queryFn: classesAPI.getTeacherClasses,
+    ...options,
+  });
+}

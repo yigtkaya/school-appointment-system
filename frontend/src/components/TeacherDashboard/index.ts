@@ -3,4 +3,5 @@ export { DashboardHeader } from './DashboardHeader';
 export { DashboardTabs } from './DashboardTabs';
 export { AppointmentsList } from './AppointmentsList';
 export { SlotManagement } from './SlotManagement';
+export { StudentManagement } from './StudentManagement';
 export { ProfileSettings } from './ProfileSettings';

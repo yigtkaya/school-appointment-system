@@ -4,9 +4,10 @@ import { DashboardHeader } from '../components/TeacherDashboard/DashboardHeader'
 import { DashboardTabs } from '../components/TeacherDashboard/DashboardTabs';
 import { AppointmentsList } from '../components/TeacherDashboard/AppointmentsList';
 import { SlotManagement } from '../components/TeacherDashboard/SlotManagement';
+import { StudentManagement } from '../components/TeacherDashboard/StudentManagement';
 import { ProfileSettings } from '../components/TeacherDashboard/ProfileSettings';
 
-type TabType = 'appointments' | 'slots' | 'profile';
+type TabType = 'appointments' | 'slots' | 'students' | 'profile';
 
 /**
  * Teacher Dashboard - Main container component
@@ -106,6 +107,10 @@ export function TeacherDashboard() {
               isLoading={slotsQuery.isLoading}
               onSlotsUpdate={() => slotsQuery.refetch()}
             />
+          )}
+
+          {activeTab === 'students' && (
+            <StudentManagement teacherId={currentUser.id} />
           )}
 
           {activeTab === 'profile' && (

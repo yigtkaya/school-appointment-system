@@ -18,6 +18,7 @@ export {
   useUpdateClassMutation,
   useDeleteClassMutation,
   useAssignTeacherMutation,
+  useTeacherClasses,
 } from './useClasses';
 
 // Students hooks
@@ -28,6 +29,10 @@ export {
   useAdminCreateStudentMutation,
   useUpdateStudentMutation,
   useDeleteStudentMutation,
+  useAvailableStudents,
+  useAddStudentToClassMutation,
+  useCreateStudentTeacherMutation,
+  useRemoveStudentFromClassMutation,
 } from './useStudents';
 
 // Slots hooks
