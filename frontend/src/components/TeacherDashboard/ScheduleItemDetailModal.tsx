@@ -1,4 +1,5 @@
-import { Mail, Phone, Calendar, Clock, FileText, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Phone, Calendar, Clock, FileText, CheckCircle, AlertCircle, XCircle, Edit2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -6,11 +7,22 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useUpdateSlotMutation } from '@/hooks';
 
 interface ScheduleItemDetailModalProps {
   item: ScheduleItemDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  teacherId?: number;
+  onSlotUpdated?: () => void;
 }
 
 export interface ScheduleItemDetail {
@@ -36,12 +48,38 @@ export interface ScheduleItemDetail {
 /**
  * Modal to display detailed information about schedule items
  * Shows appointment details including student info or slot information
+ * For slots, allows editing of date, time, and active status
  */
 export function ScheduleItemDetailModal({
   item,
   open,
   onOpenChange,
+  teacherId = 0,
+  onSlotUpdated,
 }: ScheduleItemDetailModalProps) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    date: item?.date || '',
+    start_time: item?.startTime || '',
+    end_time: item?.endTime || '',
+    is_active: item?.isActive ?? true,
+  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const updateSlotMutation = useUpdateSlotMutation(teacherId);
+
+  // Reset edit form when item changes
+  useEffect(() => {
+    if (item) {
+      setEditFormData({
+        date: item.date,
+        start_time: item.startTime,
+        end_time: item.endTime,
+        is_active: item.isActive ?? true,
+      });
+      setIsEditMode(false);
+    }
+  }, [item, open]);
+
   if (!item) return null;
 
   const getStatusBadge = () => {
@@ -92,6 +130,35 @@ export function ScheduleItemDetailModal({
   // This is kept for potential future use or API logging
   void formatTime;
 
+  const handleSaveSlot = async () => {
+    if (item.type !== 'slot' || !item.id) return;
+
+    const slotId = parseInt(item.id.split('-')[1]);
+    if (editFormData.start_time >= editFormData.end_time) {
+      alert('End time must be after start time');
+      return;
+    }
+
+    try {
+      await updateSlotMutation.mutateAsync({
+        slotId,
+        data: {
+          date: editFormData.date,
+          start_time: `${editFormData.start_time}:00`,
+          end_time: `${editFormData.end_time}:00`,
+          is_active: editFormData.is_active,
+        },
+      } as never);
+      
+      setIsEditMode(false);
+      onSlotUpdated?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to update slot:', error);
+      alert('Failed to update slot. Please try again.');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -107,7 +174,20 @@ export function ScheduleItemDetailModal({
                   : `Meeting with ${item.parentName}`}
               </DialogDescription>
             </div>
-            <div>{getStatusBadge()}</div>
+            <div className="flex items-center gap-2">
+              {item.type === 'slot' && !isEditMode && (
+                <Button
+                  onClick={() => setIsEditMode(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900"
+                  title="Edit slot"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              )}
+              <div>{getStatusBadge()}</div>
+            </div>
           </div>
         </DialogHeader>
 
@@ -203,7 +283,7 @@ export function ScheduleItemDetailModal({
           )}
 
           {/* Slot Details */}
-          {item.type === 'slot' && (
+          {item.type === 'slot' && !isEditMode && (
             <div className="space-y-3 border-t border-gray-200 pt-4">
               <h3 className="text-sm font-semibold text-gray-900">Slot Information</h3>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
@@ -228,6 +308,124 @@ export function ScheduleItemDetailModal({
                     })()}
                   </span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Slot Edit Form */}
+          {item.type === 'slot' && isEditMode && (
+            <div className="space-y-4 border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-semibold text-gray-900">Edit Slot</h3>
+              
+              {/* Date Picker */}
+              <div className="space-y-2">
+                <Label htmlFor="slot-date" className="text-sm font-medium">
+                  Date
+                </Label>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {editFormData.date || 'Pick a date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={editFormData.date ? new Date(editFormData.date) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setEditFormData(prev => ({
+                            ...prev,
+                            date: date.toISOString().split('T')[0]
+                          }));
+                          setCalendarOpen(false);
+                        }
+                      }}
+                      disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Time Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="start-time" className="text-sm font-medium">
+                    Start Time
+                  </Label>
+                  <input
+                    id="start-time"
+                    type="time"
+                    value={editFormData.start_time}
+                    onChange={(e) =>
+                      setEditFormData(prev => ({
+                        ...prev,
+                        start_time: e.target.value
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-time" className="text-sm font-medium">
+                    End Time
+                  </Label>
+                  <input
+                    id="end-time"
+                    type="time"
+                    value={editFormData.end_time}
+                    onChange={(e) =>
+                      setEditFormData(prev => ({
+                        ...prev,
+                        end_time: e.target.value
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Active Toggle */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  id="is-active"
+                  type="checkbox"
+                  checked={editFormData.is_active}
+                  onChange={(e) =>
+                    setEditFormData(prev => ({
+                      ...prev,
+                      is_active: e.target.checked
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="is-active" className="text-sm font-medium cursor-pointer">
+                  Available for booking
+                </Label>
+              </div>
+
+              {/* Save/Cancel Buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleSaveSlot}
+                  disabled={updateSlotMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {updateSlotMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button
+                  onClick={() => setIsEditMode(false)}
+                  disabled={updateSlotMutation.isPending}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
           )}

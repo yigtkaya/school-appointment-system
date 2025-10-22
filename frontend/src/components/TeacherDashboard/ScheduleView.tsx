@@ -422,6 +422,10 @@ export function ScheduleView({
         item={selectedItem}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        teacherId={teacherId}
+        onSlotUpdated={() => {
+          onSlotsUpdate?.();
+        }}
       />
 
       {/* Create Slot Modal */}

@@ -1,13 +1,13 @@
 from pydantic import BaseModel
-from datetime import date, time, datetime
+from datetime import date as date_type, time as time_type, datetime
 from typing import Optional
 
 
 class AvailableSlotBase(BaseModel):
     """Base available slot schema."""
-    date: date
-    start_time: time
-    end_time: time
+    date: date_type
+    start_time: time_type
+    end_time: time_type
     timezone: str = "UTC"
     is_active: bool = True
 
@@ -19,9 +19,9 @@ class AvailableSlotCreate(AvailableSlotBase):
 
 class AvailableSlotUpdate(BaseModel):
     """Schema for updating an available slot."""
-    date: Optional[date] = None
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
+    date: Optional[date_type] = None
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
     timezone: Optional[str] = None
     is_active: Optional[bool] = None
 
